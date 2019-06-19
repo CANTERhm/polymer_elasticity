@@ -66,6 +66,23 @@ overall_content_width = results_table.Extent(3); % gesamtbreite der tabelle
 column_width = results_table.ColumnWidth{1}; % breite der spalten für parameter (insgesamt 7 parameter)
 row_name_width = overall_content_width-column_num*column_width; % breite der spalte mit Zeilennamen
 
+% erstelle slide-panel und füge es der axes_box hinzu
+% das slide_panel ist eine die erste spalte der axes_box. Diese wird belegt
+% mit einer neuen HBox, dessen breite über den Slide-btn varriert werden
+% kann. so wird das "Slide" verhalten erzeugt
+slide_panel_container = uix.HBox('Parent', axes_box);
+slide_panel = uix.Panel('Parent', slide_panel_container);
+slide_btn = uicontrol('Parent', slide_panel_container, 'Style', 'togglebutton',...
+    'String', '>>',...
+    'Callback', @SlidePanelResizeCallback);
+
+% einstellungen des Slide-panle
+extended_width = 400;
+shrinked_width = 20;
+
+axes_box.Widths(1) = shrinked_width;
+slide_panel_container.Widths = [-1 20];
+
 % füge axes für den fit hinzu
 ax2 = axes(axes_box);
 ax2.Tag = 'np_correction';
@@ -106,15 +123,17 @@ Gui_Elements.results_table_column_width = column_width;
 Gui_Elements.results_table_column_num = column_num;
 Gui_Elements.results_table_row_name_width = row_name_width;
 Gui_Elements.results_table_overall_content_width = overall_content_width;
+Gui_Elements.slide_panel_container = slide_panel_container;
+Gui_Elements.slide_panel = slide_panel;
+Gui_Elements.slide_btn = slide_btn;
+Gui_Elements.slide_panel_extended_width = extended_width;
+Gui_Elements.slide_panel_shrinked_width = shrinked_width;
 
 % füge elemene Data hinzu
 Data.orig_line = [x_orig y_orig];
 Data.FR_relative_border = FR_relative_border;
 
-clearvars FR_relative_border fig ax1 ax2 x_orig y_orig h ...
-    new_fitrange_btn reimport_data reimport_data_btn results_table...
-    g data_brush_btn control_box base axes_box btn_box column_num column_width ...
-    overall_content_width row_name_width
+clearvars -except ForceCurves DataSelection savepath Data Gui_Elements
 
 %% helper funktionen
 
@@ -466,4 +485,20 @@ function TableResizeCallback(~, ~)
     
     % passe spaltenbreite an
     table.ColumnWidth = num2cell(ones(1,7).*new_col_width);
+end
+
+function SlidePanelResizeCallback(src, ~)
+    Gui_Elements = evalin('base', 'Gui_Elements');
+    axes_box = Gui_Elements.axes_box;
+    long = Gui_Elements.slide_panel_extended_width;
+    short = Gui_Elements.slide_panel_shrinked_width;
+    
+    switch src.Value
+        case src.Min % Raised
+            src.String = '>>';
+            axes_box.Widths(1) = short;
+        case src.Max % Depressed
+            src.String = '<<';
+            axes_box.Widths(1) = long;
+    end
 end
