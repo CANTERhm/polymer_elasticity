@@ -29,6 +29,8 @@ else
     clf;
 end
 
+fig.SizeChangedFcn = @TableResizeCallback;
+
 % Erstelle Gui
 base = uix.VBox('Parent', fig);
 axes_box = uix.HBox('Parent', base);
@@ -56,11 +58,19 @@ axes_box.Spacing = 0;
 
 % spaltennamen für results_table
 results_table.ColumnName = {'Ks Fit', 'Abriss Länge', 'lk Fit', 'Xl', 'Xr', 'Distanz', 'Lc Fit'};
+results_table.ColumnWidth = num2cell(75.*ones(1,length(results_table.ColumnWidth)));
+
+% initiale breite der Spalten 
+column_num = length(results_table.ColumnName); % Anzahl der spalten
+overall_content_width = results_table.Extent(3); % gesamtbreite der tabelle
+column_width = results_table.ColumnWidth{1}; % breite der spalten für parameter (insgesamt 7 parameter)
+row_name_width = overall_content_width-column_num*column_width; % breite der spalte mit Zeilennamen
 
 % füge axes für den fit hinzu
 ax2 = axes(axes_box);
 ax2.Tag = 'np_correction';
 title('---');
+xlabel('vertical tip position / m');
 grid on
 grid minor
 
@@ -69,6 +79,8 @@ plot(ax1, x_orig, y_orig, 'b.',...
     'ButtonDownFcn', @SetStartPoint);
 ax1.Tag = 'np_data';
 title('Wähle Nullpunkt des Abrisses');
+xlabel('vertical tip position / m');
+ylabel('vertical deflection / N')
 grid on
 grid minor
 
@@ -90,6 +102,10 @@ Gui_Elements.new_fitrange_btn = new_fitrange_btn;
 Gui_Elements.data_brush_btn = data_brush_btn;
 Gui_Elements.reimport_data_btn = reimport_data_btn;
 Gui_Elements.data_brush = h;
+Gui_Elements.results_table_column_width = column_width;
+Gui_Elements.results_table_column_num = column_num;
+Gui_Elements.results_table_row_name_width = row_name_width;
+Gui_Elements.results_table_overall_content_width = overall_content_width;
 
 % füge elemene Data hinzu
 Data.orig_line = [x_orig y_orig];
@@ -97,7 +113,8 @@ Data.FR_relative_border = FR_relative_border;
 
 clearvars FR_relative_border fig ax1 ax2 x_orig y_orig h ...
     new_fitrange_btn reimport_data reimport_data_btn results_table...
-    g data_brush_btn control_box base axes_box btn_box
+    g data_brush_btn control_box base axes_box btn_box column_num column_width ...
+    overall_content_width row_name_width
 
 %% helper funktionen
 
@@ -413,7 +430,7 @@ function data_brush_btn_callback(src, ~)
             h.Enable = 'off';
             reimport_data_btn.Enable = 'on';
             new_fitrange_btn.Enable = 'on';
-            ax1.PickableParts = 'none';
+            ax1.PickableParts = 'visible';
             for i = 1:length(ax1.Children)
                 ax1.Children(i).PickableParts = 'visible';
             end
@@ -436,4 +453,17 @@ function data_brush_btn_callback(src, ~)
             catch
             end
     end
+end
+
+function TableResizeCallback(~, ~)
+    Gui_Elements = evalin('base', 'Gui_Elements');
+    table = Gui_Elements.results_table;
+    table_width = table.Position(3);
+    row_name_width = Gui_Elements.results_table_row_name_width;
+    
+    % berechne die neue spaltenbreite
+    new_col_width = (table_width - row_name_width)/7;
+    
+    % passe spaltenbreite an
+    table.ColumnWidth = num2cell(ones(1,7).*new_col_width);
 end
