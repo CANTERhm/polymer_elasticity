@@ -46,7 +46,7 @@ data_brush_btn = uicontrol('Parent', btn_box, 'Style', 'togglebutton',...
     'Callback', @data_brush_btn_callback);
 new_fitrange_btn = uicontrol(btn_box, 'Style', 'pushbutton',...
     'String', 'Neuer Fitbereich',...
-    'Callback', @new_fitrange_btn_callback);
+    'Callback', @Callbacks.new_fitrange_btn_callback);
 
 % Gui Einstellungen
 base.Heights = [-4 -1];
@@ -71,7 +71,7 @@ row_name_width = overall_content_width-column_num*column_width; % breite der spa
 % mit einer neuen HBox, dessen breite über den Slide-btn varriert werden
 % kann. so wird das "Slide" verhalten erzeugt
 slide_panel_container = uix.HBox('Parent', axes_box);
-slide_panel = uix.Panel('Parent', slide_panel_container);
+slide_panel = uix.TabPanel('Parent', slide_panel_container);
 slide_btn = uicontrol('Parent', slide_panel_container, 'Style', 'togglebutton',...
     'String', '>>',...
     'Callback', @SlidePanelResizeCallback);
@@ -82,6 +82,16 @@ shrinked_width = 20;
 
 axes_box.Widths(1) = shrinked_width;
 slide_panel_container.Widths = [-1 20];
+
+% füge dem slide-panel einen modellparemeter dialog hinzu
+dialog_container = uix.VBox('Parent', slide_panel);
+vary_parameter_panel = uix.BoxPanel('Parent', dialog_container,...
+    'Title', 'Variable Parameter');
+constant_paramter_panel = uix.BoxPanel('Parent', dialog_container,...
+    'Title', 'Konstante Parameter');
+slide_panel.TabTitles = {'Modellparameter'};
+slide_panel.TabWidth = 100;
+
 
 % füge axes für den fit hinzu
 ax2 = axes(axes_box);
@@ -411,25 +421,25 @@ function reimport_data_btn_callback(~, ~)
     assignin('base', 'Data', Data);
 end
 
-function new_fitrange_btn_callback(~, ~)
-        Gui_Elements = evalin('base', 'Gui_Elements');
-        Data = evalin('base', 'Data');
-        x = Data.x;
-        y = Data.y;
-        ax2 = Gui_Elements.ax2;
-        
-        
-        cla(ax2);
-        hold(ax2, 'on');
-        corrected_line = plot(ax2, x, y, 'b.');
-        hold(ax2, 'off');
-        title(ax2, 'Wähle Fitbereich');
-
-        Gui_Elements.ax2 = ax2;
-        Data.corrected_line = corrected_line;
-        assignin('base', 'Gui_Elements', Gui_Elements);
-        assignin('base', 'Data', Data);
-end
+% function new_fitrange_btn_callback(~, ~)
+%         Gui_Elements = evalin('base', 'Gui_Elements');
+%         Data = evalin('base', 'Data');
+%         x = Data.x;
+%         y = Data.y;
+%         ax2 = Gui_Elements.ax2;
+%         
+%         
+%         cla(ax2);
+%         hold(ax2, 'on');
+%         corrected_line = plot(ax2, x, y, 'b.');
+%         hold(ax2, 'off');
+%         title(ax2, 'Wähle Fitbereich');
+% 
+%         Gui_Elements.ax2 = ax2;
+%         Data.corrected_line = corrected_line;
+%         assignin('base', 'Gui_Elements', Gui_Elements);
+%         assignin('base', 'Data', Data);
+% end
 
 function data_brush_btn_callback(src, ~)
     Gui_Elements = evalin('base', 'Gui_Elements');
