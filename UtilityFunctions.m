@@ -48,6 +48,32 @@ classdef UtilityFunctions
             end
         end % CalculateRelativeFitRange
         
+        function textLine(parent, text, varargin)
+            % input parser
+            p = inputParser;
+            
+            addRequired(p, 'parent');
+            addRequired(p, 'text');
+            addParameter(p, 'fontAngle', 'normal');
+            addParameter(p, 'fontWeight', 'normal');
+            addParameter(p, 'horizontalAlignment', 'left');
+            
+            parse(p, parent, text, varargin{:});
+            
+            parent = p.Results.parent;
+            text = p.Results.text;
+            fontAngle = p.Results.fontAngle;
+            fontWeight = p.Results.fontWeight;
+            horizontalAlignment = p.Results.horizontalAlignment;
+            
+            % create uicontrol for displaying text
+            line = uicontrol('Parent', parent, 'Style', 'text');
+            line.FontAngle = fontAngle;
+            line.FontWeight = fontWeight;
+            line.HorizontalAlignment = horizontalAlignment;
+            line.String = text;
+        end % textLine
+        
     end
     
 end
