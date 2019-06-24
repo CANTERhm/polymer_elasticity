@@ -5,6 +5,24 @@ classdef UtilityFunctions
     methods(Static)
         
         function [Xr, Xl, FR_relative, new_fit_range] = CalculateRelativeFitRange(FR_relative_border, xvals, yvals, fit_range)
+            % Berechnung der relativen Grenzen des ausgewählten Fitbereichs
+            %
+            % input: 
+            %   - FR_relative_border: 1x2 double vektor mit prozentualen
+            %   Grenezn (kann auch leer sein)
+            %   - xvals: x-werte des der Kraftkurve
+            %   - yvals: y-Werte des der Kraftkurve
+            %   - fit_range: nx2 double vektor mit Koordinaten der
+            %   Datenpunte im Fitbereich
+            %
+            % output:
+            %   - Xl/ Xr: relativen Grenzen des Fitbereichs bezogen auf die
+            %   gesamtlänge der Kraftkurve
+            %   - FR_relative: relative Distanz zwischen Xl bzw. Xr (Xl-Xr)
+            %   - new_fit_range: nx2 double vektor mit den Koordinaten der 
+            %   Datenpunkte, die in FR_relative_border liegen (für den fall
+            %   das fit_range leer ist und FR_relative_border nicht)
+            
             new_fit_range = [];
 
             if isempty(FR_relative_border)
@@ -49,6 +67,23 @@ classdef UtilityFunctions
         end % CalculateRelativeFitRange
         
         function textLine(parent, text, varargin)
+            % Erleichterte methode um uicontrol Style "text" zu erzeugen.
+            % 
+            % input: 
+            %   - parent: Container, indem textLine angezeigt werden soll
+            %   z.B. ein uix.HBox
+            %   - text: character-vektor mit dem Anzuzeigenden Text
+            %
+            % Optional:
+            %   - fontAngle: char-vektor mit 'normal' oder 'italic' 
+            %   default: 'normal', (siehe uicontrol properties)
+            %   - fontWeight: char-vektor mit 'normal' oder 'bold'
+            %   default: 'normal', (siehe uicontrol properties)
+            %   - horizontalAlignment: char-vektor mit 'left', 'center'
+            %   oder 'right'
+            %   default: 'left', (siehe uicontrol properties)
+            
+            
             % input parser
             p = inputParser;
             
@@ -75,6 +110,18 @@ classdef UtilityFunctions
         end % textLine
         
         function outVar = conversion(inVar)
+            % einfache funktion um vektoren des typs "logical" in vektoren
+            % des typs double zu konvertieren
+            %
+            % input:
+            %   - inVar: nx1 logic
+            % output: 
+            %   - outVar: nx1 double
+            %
+            % Notiz:
+            %   notwendig, da python die matlab-version eines boolschen
+            %   vektors nicht akzeptiert
+            
             outVar = ones(1, length(inVar));
             for i = 1:length(inVar)
                 if inVar(i) == true
