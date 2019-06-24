@@ -36,11 +36,6 @@ hold_parameter.Ks = false;
 hold_parameter.Lc = false;
 hold_parameter.lk = true;
 
-lh = PropListener();
-lh.addListener(vary_parameter, 'UpdateObject', @Callbacks.DoFit);
-lh.addListener(constant_parameter, 'UpdateObject', @Callbacks.DoFit);
-lh.addListener(hold_parameter, 'UpdateObject', @Callbacks.DoFit);
-
 %% daten einlesen
 
 x_orig = DataSelection(:,1);
@@ -118,12 +113,13 @@ slide_btn = uicontrol('Parent', slide_panel_container, 'Style', 'togglebutton',.
 dialog_container = uix.VBox('Parent', slide_panel);
 vary_parameter_panel = uix.BoxPanel('Parent', dialog_container,...
     'Title', 'Variable Parameter');
+button_container = uix.HButtonBox('Parent', dialog_container);
 vary_parameter_container = uix.VBox('Parent', vary_parameter_panel);
 constant_parameter_panel = uix.BoxPanel('Parent', dialog_container,...
     'Title', 'Konstante Parameter');
 constant_parameter_container = uix.VBox('Parent', constant_parameter_panel);
 
-% inhalt vary_parameter_container
+% content of vary_parameter_container
 
 vary_data = {vary_parameter.Ks, 'N/m', hold_parameter.Ks;...
     vary_parameter.Lc, 'm', hold_parameter.Lc;...
@@ -136,7 +132,7 @@ vary_parameter_table.Data = vary_data;
 vary_parameter_table.ColumnEditable = [true false true];
 vary_parameter_table.CellEditCallback = @Callbacks.UpdateVaryParameterCallback;
 
-% inhalt constant_parameter_container
+% content of constant_parameter_container
 
 constant_data = {constant_parameter.kb, 'J/K'; constant_parameter.T, 'K'};
 
@@ -146,6 +142,16 @@ constant_parameter_table.RowName = {'kb', 'T'};
 constant_parameter_table.Data = constant_data;
 constant_parameter_table.ColumnEditable = [true false];
 constant_parameter_table.CellEditCallback = @Callbacks.UpdateConstantParameterCallback;
+
+% configure the DoFit button
+button_container.HorizontalAlignment = 'right';
+button_container.VerticalAlignment = 'middle';
+do_fit_btn = uicontrol('Parent', button_container, 'Style', 'pushbutton',...
+    'String', 'Do Fit',...
+    'Callback', @Callbacks.DoFit);
+
+% configure the dialog_container
+dialog_container.Heights = [-1 20 -1];
 
 %% slide-panel: hilfe-tab
 help_panel = uix.ScrollingPanel('Parent', slide_panel);
