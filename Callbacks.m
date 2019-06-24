@@ -4,6 +4,7 @@ classdef Callbacks
     methods(Static) % Button Callbacks
         
         function new_fitrange_btn_callback(~, ~)
+            % Callback für den Button "Neuer Fitberich"
                 Gui_Elements = evalin('base', 'Gui_Elements');
                 Data = evalin('base', 'Data');
                 x = Data.x;
@@ -24,6 +25,7 @@ classdef Callbacks
         end % new_fit_range_btn_callback
         
         function data_brush_btn_callback(src, ~)
+            % Callback für den Button "Markiere Datenbereich"
             Gui_Elements = evalin('base', 'Gui_Elements');
             h = Gui_Elements.data_brush;
             reimport_data_btn = Gui_Elements.reimport_data_btn;
@@ -67,6 +69,8 @@ classdef Callbacks
         end % data_brush_btn_callback
         
         function reimport_data_btn_callback(~, ~)
+            % Callback für den Button "Reimportiere DataSelection"
+            
             try
                 DataSelection = evalin('base', 'DataSelection');
                 Gui_Elements = evalin('base', 'Gui_Elements');
@@ -111,6 +115,8 @@ classdef Callbacks
     methods(Static) % Resize Callbacks
         
         function TableResizeCallback(~, ~)
+            % resize callback für die Tabelle der Fitergebnisse
+            
             Gui_Elements = evalin('base', 'Gui_Elements');
             table = Gui_Elements.results_table;
             table_width = table.Position(3);
@@ -124,6 +130,8 @@ classdef Callbacks
         end % TableResizeCallback
         
         function SlidePanelResizeCallback(src, ~)
+            % resize callback für die Elemente des slide-panels
+            
             Gui_Elements = evalin('base', 'Gui_Elements');
             axes_box = Gui_Elements.axes_box;
             long = Gui_Elements.slide_panel_extended_width;
@@ -144,6 +152,9 @@ classdef Callbacks
     methods(Static) % other Callbacks
         
         function SetStartPoint(src, evt)
+            % callback für die Korrektur des Offsets und darstellung der
+            % korrigierten Daten
+            
             Gui_Elements = evalin('base', 'Gui_Elements');
             Data = evalin('base', 'Data');
 
@@ -234,6 +245,7 @@ classdef Callbacks
         end % SetStartPoint
         
         function DoFit(~, ~)
+            % callback zur Durchführung und darstellung des Fits
             Gui_Elements = evalin('base', 'Gui_Elements');
             Data = evalin('base', 'Data');
 
@@ -351,6 +363,9 @@ classdef Callbacks
         end % DoFit
         
         function UpdateVaryParameterCallback(~, evt)
+            % CellEditCallback für die tabelle der variablen parameter des
+            % modells
+            
             % input
             Data = evalin('base', 'Data');
             
@@ -401,6 +416,9 @@ classdef Callbacks
         end % UpdateParameterCallback
         
         function UpdateConstantParameterCallback(~, evt)
+            % CellEditCallback für die tabelle der konstanten parameter des
+            % modells
+            
             % input
             Data = evalin('base', 'Data');
             

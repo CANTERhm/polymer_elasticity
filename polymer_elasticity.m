@@ -9,6 +9,8 @@
 % Für eine Detailierte Anleitung siehe den Hilfe Tab im Slide-Menü von
 % polymere_elasticity
 % clearvars -except ForceCurves DataSelection savepath
+%
+% siehe auch: Hilfe.docx oder Hilfe.pdf
 
 %% erstelle parameter
 vary_parameter = Results();
