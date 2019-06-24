@@ -1,0 +1,16 @@
+Generell:
+Dieses Programm dient der Auswertung fon Force-Clamp-Abrissen (oder ähnlichen AFM-Kurven)
+mit dem Modell der erweiterten, freiverbundenen Kette.
+Modell: Lc...
+Quelle: ...
+
+Benutzer Anleitung:
+
+1. Startpunkt des Abrisses
+Der Startpunkt des Abrisses wird mit der linken Maustaste
+auf der linken Abbildung (Wähle Startpunkt des Abrisses) gewählt.
+Wenn kein Fehler aufgetreten ist, wird in dieser Abbildung der gewählte 
+Startpunkt durch ein Gestricheltes Fadenkreuz mit der Beschriftung "x/y Offset"
+markiert. In der zweiten Abbdilung (zunächst mit "---" bezeichnet) erscheint 
+der um den Offset korrigierten Abriss. Der Abbildungstitel der zweiten Abbildung 
+ändert sich zu "Wähle Fitbereich".

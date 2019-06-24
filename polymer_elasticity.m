@@ -1,14 +1,50 @@
-%% Daten einlesen und Auswahl Abriss
-% Auswahl Abriss bedeutet den Punkt zu wählen, an dem der Abriss beginnt.
-% Dieser Startpunkt wird dann markiert und die Daten auf die x und y
-% offsets korrigiert, um besser zu fitten.
+%% poymere_elasticity
+% Es muss die Variable "DataSelection" im Workspace vorhanden sein, bevor
+% das Skirpt gestartet wird. "DataSelection" kann am einfachsten über die
+% App "Kraftkurven" erstellt werden.
+% DataSeletion: nx2 Vektor mit x, y koordinaten von Datenpunkten 
+%   - DataSelection(:,1): x-koordinaten
+%   - DataSelection(:,2): y-koordinaten
+%
+% Für eine Detailierte Anleitung siehe den Hilfe Tab im Slide-Menü von
+% polymere_elasticity
+% clearvars -except ForceCurves DataSelection savepath
 
-clearvars -except ForceCurves DataSelection savepath
+%% erstelle parameter
+vary_parameter = Results();
+constant_parameter = Results();
+hold_parameter = Results();
+
+vary_parameter.addproperty('Ks');
+vary_parameter.addproperty('Lc');
+vary_parameter.addproperty('lk');
+vary_parameter.Ks = 28;
+vary_parameter.Lc = 0.5e-6;
+vary_parameter.lk = 5.4e-10;
+
+constant_parameter.addproperty('T');
+constant_parameter.addproperty('kb');
+constant_parameter.T = 300;
+constant_parameter.kb = 1.38e-23;
+
+hold_parameter.addproperty('Ks');
+hold_parameter.addproperty('Lc');
+hold_parameter.addproperty('lk');
+hold_parameter.Ks = false;
+hold_parameter.Lc = false;
+hold_parameter.lk = true;
+
+lh = PropListener();
+lh.addListener(vary_parameter, 'UpdateObject', @Callbacks.DoFit);
+lh.addListener(constant_parameter, 'UpdateObject', @Callbacks.DoFit);
+lh.addListener(hold_parameter, 'UpdateObject', @Callbacks.DoFit);
+
+%% daten einlesen
 
 x_orig = DataSelection(:,1);
 y_orig = DataSelection(:,2);
 FR_relative_border = [0.95 1];
-fig = findobj('Tag', 'korrekturen');
+fig = findobj('Tag', 'polymer_elasticity');
 Gui_Elements = struct();
 Data = struct();
 
@@ -21,17 +57,17 @@ end
 if isempty(fig)
     fig = figure();
     fig.NumberTitle = 'off';
-    fig.Name = 'Korrekturen';
-    fig.Tag = 'korrekturen';
+    fig.Name = 'Polymer Elasticity';
+    fig.Tag = 'polymer_elasticity';
 else
     g = groot;
     set(g, 'CurrentFigure', fig);
     clf;
 end
 
-fig.SizeChangedFcn = @TableResizeCallback;
+fig.SizeChangedFcn = @Callbacks.TableResizeCallback;
 
-% Erstelle Gui
+%% erstelle gui
 base = uix.VBox('Parent', fig);
 axes_box = uix.HBox('Parent', base);
 control_box = uix.VBox('Parent', base);
@@ -39,16 +75,16 @@ btn_box = uix.HBox('Parent', control_box, 'Spacing', 10);
 results_table = uitable(control_box);
 
 reimport_data_btn = uicontrol('Parent', btn_box, 'Style', 'pushbutton',...
-    'String', 'Importiere neue DataSelection',...
-    'Callback', @reimport_data_btn_callback);
+    'String', 'Reimportiere DataSelection',...
+    'Callback', @Callbacks.reimport_data_btn_callback);
 data_brush_btn = uicontrol('Parent', btn_box, 'Style', 'togglebutton',...
     'String', 'Markiere Datenbereich',...
-    'Callback', @data_brush_btn_callback);
+    'Callback', @Callbacks.data_brush_btn_callback);
 new_fitrange_btn = uicontrol(btn_box, 'Style', 'pushbutton',...
     'String', 'Neuer Fitbereich',...
-    'Callback', @new_fitrange_btn_callback);
+    'Callback', @Callbacks.new_fitrange_btn_callback);
 
-% Gui Einstellungen
+%% gui einstellungen
 base.Heights = [-4 -1];
 base.Padding = 5;
 control_box.Heights = [30 -1];
@@ -56,34 +92,185 @@ control_box.Spacing = 10;
 axes_box.Padding = 0;
 axes_box.Spacing = 0;
 
-% spaltennamen für results_table
+%% spaltennamen für results_table
 results_table.ColumnName = {'Ks Fit', 'Abriss Länge', 'lk Fit', 'Xl', 'Xr', 'Distanz', 'Lc Fit'};
 results_table.ColumnWidth = num2cell(75.*ones(1,length(results_table.ColumnWidth)));
 
-% initiale breite der Spalten 
+% %initiale breite der Spalten 
 column_num = length(results_table.ColumnName); % Anzahl der spalten
 overall_content_width = results_table.Extent(3); % gesamtbreite der tabelle
 column_width = results_table.ColumnWidth{1}; % breite der spalten für parameter (insgesamt 7 parameter)
 row_name_width = overall_content_width-column_num*column_width; % breite der spalte mit Zeilennamen
 
-% erstelle slide-panel und füge es der axes_box hinzu
+%% erstelle slide-panel 
 % das slide_panel ist eine die erste spalte der axes_box. Diese wird belegt
 % mit einer neuen HBox, dessen breite über den Slide-btn varriert werden
 % kann. so wird das "Slide" verhalten erzeugt
 slide_panel_container = uix.HBox('Parent', axes_box);
-slide_panel = uix.Panel('Parent', slide_panel_container);
+slide_panel = uix.TabPanel('Parent', slide_panel_container);
 slide_btn = uicontrol('Parent', slide_panel_container, 'Style', 'togglebutton',...
     'String', '>>',...
-    'Callback', @SlidePanelResizeCallback);
+    'Callback', @Callbacks.SlidePanelResizeCallback);
 
-% einstellungen des Slide-panle
+%% slide-panel: modellparameter-tab
+dialog_container = uix.VBox('Parent', slide_panel);
+vary_parameter_panel = uix.BoxPanel('Parent', dialog_container,...
+    'Title', 'Variable Parameter');
+vary_parameter_container = uix.VBox('Parent', vary_parameter_panel);
+constant_parameter_panel = uix.BoxPanel('Parent', dialog_container,...
+    'Title', 'Konstante Parameter');
+constant_parameter_container = uix.VBox('Parent', constant_parameter_panel);
+
+% inhalt vary_parameter_container
+
+vary_data = {vary_parameter.Ks, 'N/m', hold_parameter.Ks;...
+    vary_parameter.Lc, 'm', hold_parameter.Lc;...
+    vary_parameter.lk, 'm', hold_parameter.lk};
+
+vary_parameter_table = uitable(vary_parameter_container);
+vary_parameter_table.ColumnName = {'Wert', 'Einheit', 'fixieren?'};
+vary_parameter_table.RowName = {'Ks', 'Lc', 'lk'};
+vary_parameter_table.Data = vary_data;
+vary_parameter_table.ColumnEditable = [true false true];
+vary_parameter_table.CellEditCallback = @Callbacks.UpdateVaryParameterCallback;
+
+% inhalt constant_parameter_container
+
+constant_data = {constant_parameter.kb, 'J/K'; constant_parameter.T, 'K'};
+
+constant_parameter_table = uitable(constant_parameter_container);
+constant_parameter_table.ColumnName = {'Wert', 'Einheit'};
+constant_parameter_table.RowName = {'kb', 'T'};
+constant_parameter_table.Data = constant_data;
+constant_parameter_table.ColumnEditable = [true false];
+constant_parameter_table.CellEditCallback = @Callbacks.UpdateConstantParameterCallback;
+
+%% slide-panel: hilfe-tab
+help_panel = uix.ScrollingPanel('Parent', slide_panel);
+help_container = uix.VBox('parent', help_panel);
+
+general_panel = uix.BoxPanel('Parent', help_container, 'Title', 'Allgemein');
+general_container = uix.VBox('Parent', general_panel);
+userguide_panel = uix.BoxPanel('Parent', help_container, 'Title', 'Anleitung');
+userguide_container = uix.VBox('Parent', userguide_panel);
+other_panel = uix.BoxPanel('Parent', help_container, 'Title', 'Sonstiges');
+other_container = uix.VBox('Parent', other_panel);
+
+% inhalt general_container
+str = {['Dieses Programm dient der Auswertung von Abrissen (Kraft vs. Weg) ' ...
+    'aus Force-Clamp-Experimenten, oder ähnlichen Kurven. Die Abrisse werden ' ...
+    'mit dem Modell der erweiterten, freiverbundenen Kette Ausgewertet: '],...
+    'Lc*[coth(x)-1/s]*(1+F/(Ks*lk)) mit x = F*lk/(kb*T)',...
+    ''};
+UtilityFunctions.textLine(general_panel, str,...
+    'fontAngle', 'normal',...
+    'fontWeight', 'normal',...
+    'horizontalAlignment', 'left');
+
+% inhalt userguide_container
+str = '1. Auswahl des Abrisses';
+UtilityFunctions.textLine(userguide_container, str,...
+    'fontAngle', 'normal',...
+    'fontWeight', 'bold',...
+    'horizontalAlignment', 'left');
+
+str = {['Der Startpunkt des Abrisses wird mit der linken Maustaste auf der linken' ...
+    'Abbildung (Titel: Wähle Startpunkt des Abrisses) gewählt. Wenn kein Fehler aufgetreten ist,' ...
+    'wird in dieser Abbildung der gewählte Startpunkt durch ein gestrichteltes Fadenkreuz' ...
+    'mit der Beschriftung "x/y Offset" markiert. In der rechten Abbdilung (Titel zunächst: ---) ' ...
+    'erscheint der um den Offset korrigierten Abriss. Der Abbildungstitel' ...
+    'der rechten Abbdildung ändert sich zu "Wähle Fitbereich".'],...
+    ''};
+UtilityFunctions.textLine(userguide_container, str,...
+    'fontAngle', 'normal',...
+    'fontWeight', 'normal',...
+    'horizontalAlignment', 'left');
+
+str = '2. Auswahl des Fitbereichs';
+UtilityFunctions.textLine(userguide_container, str,...
+    'fontAngle', 'normal',...
+    'fontWeight', 'bold',...
+    'horizontalAlignment', 'left');
+
+str = {['Um Den Datenbereich für den Fit des Modells auszuwählen muss der Button ' ...
+    '"Markiere Datenbereich" aktiviert werden. Danach ändert sich der Cursor ' ...
+    'im Bereich beider Abbildungen zu einem schwarzen, durchgehenden Fadenkreuz. ' ... 
+    'Nur in der rechten Abbdilung (Titel: Wähle Fitbereich) darf der Fitbereich ausgewält werden. ' ...
+    'Zum Auswählen des Fitbereichs, linke Maustaste gedrückt halten und mit dem Rechteck ' ...
+    'die zu merkierenden Daten überstreichen. Nachdem die linke Maustaste losgelassen wurde, ' ...
+    'wird das Modell an die Daten angepasst und in der rechten Abbildung angezeigt. '],...
+    ''};
+UtilityFunctions.textLine(userguide_container, str,...
+    'fontAngle', 'normal',...
+    'fontWeight', 'normal',...
+    'horizontalAlignment', 'left');
+
+% inhalt other_container
+str = 'Laden neuer Daten';
+UtilityFunctions.textLine(other_container, str,...
+    'fontAngle', 'normal',...
+    'fontWeight', 'bold',...
+    'horizontalAlignment', 'left');
+
+str = {['Veränderte Daten in "DataSelection" können neu importiert werden. Dazu ' ...
+    'muss der Button "Reimportiere DataSelection" betätigt werden. Danach ' ...
+    'wird der neue Datensatz in der linken Abbildung angezeigt. Alle Offsets, ' ...
+    'die Markierung des Fitbereichs, der Fit sowie der Graph des Abrisses werden gelöscht'],...
+    ''};
+UtilityFunctions.textLine(other_container, str,...
+    'fontAngle', 'normal',...
+    'fontWeight', 'normal',...
+    'horizontalAlignment', 'left');
+
+str = 'Neuer Fitbereich';
+UtilityFunctions.textLine(other_container, str,...
+    'fontAngle', 'normal',...
+    'fontWeight', 'bold',...
+    'horizontalAlignment', 'left');
+
+str = {['Um einen neuen Fitbereich zu wählen ohne dabei den aktuellen Offset ' ...
+    'des Abrisses zu ändern, muss der Button "Neuer Fitbereich" betätigt werden. ' ...
+    'Es wird der aktuelle Fitbereich, sowie der Fit selbst gelöscht.']};
+UtilityFunctions.textLine(other_container, str,...
+    'fontAngle', 'normal',...
+    'fontWeight', 'normal',...
+    'horizontalAlignment', 'left');
+
+str = 'Abspeichern eines Fits';
+UtilityFunctions.textLine(other_container, str,...
+    'fontAngle', 'normal',...
+    'fontWeight', 'bold',...
+    'horizontalAlignment', 'left');
+
+str = {['Es ist möglich den Fit des Abrisses als .png-Bild zu speichern. Dazu ' ...
+    'muss mit der rechten Maustaste auf die rechte Abbildung geklickt werden. Es ' ...
+    'erscheint ein Kontextmenü, indem der Menüpunkt "Grafik speicher" auswewählt werden muss. ' ...
+    'Danach kann in einem Dialog der Speicherort festgelegt werden (noch nicht implementiert).']};
+UtilityFunctions.textLine(other_container, str,...
+    'fontAngle', 'normal',...
+    'fontWeight', 'normal',...
+    'horizontalAlignment', 'left');
+
+
+
+% hilfe-tab einstellungen
+help_panel.MinimumHeights = 700;
+help_panel.MinimumWidths = 300;
+
+help_container.Heights = [100 -1 -1];
+userguide_container.Heights = [15 -1 15 -1];
+other_container.Heights = [15 -1 15 -1 15 -1];
+
+%% einstellungen slide-panle
 extended_width = 400;
 shrinked_width = 20;
 
 axes_box.Widths(1) = shrinked_width;
 slide_panel_container.Widths = [-1 20];
+slide_panel.TabTitles = {'Modellparameter', 'Hilfe'};
+slide_panel.TabWidth = 100;
 
-% füge axes für den fit hinzu
+%% erstelle axes für den Fit
 ax2 = axes(axes_box);
 ax2.Tag = 'np_correction';
 title('---');
@@ -93,7 +280,7 @@ grid minor
 
 ax1 = axes(axes_box);
 plot(ax1, x_orig, y_orig, 'b.',...
-    'ButtonDownFcn', @SetStartPoint);
+    'ButtonDownFcn', @Callbacks.SetStartPoint);
 ax1.Tag = 'np_data';
 title('Wähle Nullpunkt des Abrisses');
 xlabel('vertical tip position / m');
@@ -101,12 +288,12 @@ ylabel('vertical deflection / N')
 grid on
 grid minor
 
-% erstelle data brush-object
+%% erstelle data brush-object
 h = brush(fig);
 h.Enable = 'off';
-h.ActionPostCallback = @DoFit;
+h.ActionPostCallback = @Callbacks.DoFit;
 
-% füge elemente zu Gui_Elements hinzu
+%% erstelle Gui_Elements 
 Gui_Elements.fig = fig;
 Gui_Elements.ax1 = ax1;
 Gui_Elements.ax2 = ax2;
@@ -129,376 +316,13 @@ Gui_Elements.slide_btn = slide_btn;
 Gui_Elements.slide_panel_extended_width = extended_width;
 Gui_Elements.slide_panel_shrinked_width = shrinked_width;
 
-% füge elemene Data hinzu
+%% erstelle Data 
 Data.orig_line = [x_orig y_orig];
+Data.brushed_data = [];
 Data.FR_relative_border = FR_relative_border;
+Data.parameter.variable_parameter = vary_parameter;
+Data.parameter.constant_parameter = constant_parameter;
+Data.parameter.hold_parameter = hold_parameter;
 
+%% löschen unnötiger Variablen
 clearvars -except ForceCurves DataSelection savepath Data Gui_Elements
-
-%% helper funktionen
-
-function [Xr, Xl, FR_relative, new_fit_range] = CalculateRelativeFitRange(FR_relative_border, xvals, yvals, fit_range)
-    new_fit_range = [];
-        
-    if isempty(FR_relative_border)
-        
-        % wenn beides, FR_relative_border und fit_range, leer sind, muss
-        % abgebrochen werden
-        if isempty(fit_range)
-            return
-        end
-        
-        DS_Y_R = find(xvals == xvals(end)); % letzer Wert der ausgewählten kurve entspricht 100%
-        if length(DS_Y_R) > 1
-            DS_Y_R = DS_Y_R(1);
-        end
-
-        FR_Y_L = find(xvals == fit_range(1,1)); % linke Grenze des fitbereichs;
-        if length(FR_Y_L) > 1
-            FR_Y_L = FR_Y_L(1);
-        end
-
-        FR_Y_R = find(xvals == fit_range(end,1)); % rechte Grenze des fitbereichs
-        if length(FR_Y_R) > 1
-            FR_Y_R = FR_Y_R(1);
-        end
-
-        Xl = FR_Y_L/DS_Y_R*100; % linke Grenze relativ
-        Xr = FR_Y_R/DS_Y_R*100; % rechte Grenze relativ
-        FR_relative = Xr-Xl; % relative Distanz des fitbereichs
-    elseif isa(FR_relative_border, 'double')
-        % wenn der input FR_relativ ein 1x2 vektor mit relativen grenzen
-        % ist!
-        % in diesem bedingungsteil kann fit_range auch leer sein 
-        Xl = FR_relative_border(1,1)*100; % neue rechte grenze
-        Xr = FR_relative_border(1,2)*100; % neue linke grenze
-        FR_relative = Xr-Xl; 
-        l_index = round(length(xvals)*Xl/100);
-        r_index = round(length(xvals)*Xr/100);
-        new_fr_x = xvals(l_index:r_index, 1);
-        new_fr_y = yvals(l_index:r_index, 1);
-        new_fit_range = [new_fr_x new_fr_y];
-    end
-end
-
-%% Callbacks
-
-function SetStartPoint(src, evt)
-    Gui_Elements = evalin('base', 'Gui_Elements');
-    Data = evalin('base', 'Data');
-    
-    fig = Gui_Elements.fig;
-    h = Gui_Elements.data_brush;
-    z = zoom(fig);
-    p = pan(fig);
-    dc = datacursormode(fig);
-    b = brush(fig);
-    x_orig = src.XData';
-    y_orig = src.YData';
-    A_bl_range = evt.IntersectionPoint;
-    
-    if strcmp(z.Enable, 'off') && strcmp(p.Enable, 'off') && ...
-            strcmp(dc.Enable, 'off') && strcmp(b.Enable, 'off')
-        
-        % offset korrekturen in x- und y-dimensionen
-
-        % für den Fall, dass keine Baselinedaten ausgewählt wurden, werden 0 - 30%
-        % der Kraftkurve für die Baselinekorrekturen genutzt
-        s = size(A_bl_range);
-        if ~isempty(A_bl_range) && s(2) > 1
-            % Baselinebereich auf dimensionen aufteilen
-            bl_x = A_bl_range(:,1);
-            bl_y = A_bl_range(:,2);
-        else
-            bl_x = [];
-            bl_y = [];
-        end
-
-        % korrektur für x-offset
-        if isempty(bl_x)
-            x = x_orig;
-        else
-            x = x_orig-bl_x(1);
-        end
-
-
-        % korrigiere baseline verkippung
-        if isempty(bl_y)
-            y = y_orig;
-        else
-            y = y_orig-mean(bl_y);
-        end
-        
-        % plot der korrigierten daten
-        ax2 = Gui_Elements.ax2;
-        cla(ax2);
-        hold(ax2, 'on');
-        corrected_line = plot(ax2, x, y, 'b.');
-        hold(ax2, 'off');
-        title(ax2, 'Wähle Fitbereich');
-        
-        % zeichne in dem subplot für Baselinekorrektur die ausgewählte
-        % Stelle ein
-        ax1 = Gui_Elements.ax1;
-        cla(ax1);
-        try
-            delete(Gui_Elements.xoffset);
-        catch
-        end
-        
-        try
-            delete(Gui_Elements.yoffset);
-        catch
-        end
-        hold(ax1, 'on')
-        plot(ax1, x_orig, y_orig, 'b.',...
-            'ButtonDownFcn', @SetStartPoint);
-        yoffset = vline(mean(A_bl_range(:,1)), 'k--');
-        xoffset = hline(mean(A_bl_range(:,2)), 'k--', 'x/y Offset');
-        hold(ax1, 'off');
-    end
-    
-    % schreibe x,y und A_bl_range in den "base" Workspace als Output
-    Data.x = x;
-    Data.y = y;
-    Data.bl_x = bl_x;
-    Data.bl_y = bl_y;
-    Data.A_bl_range = A_bl_range;
-    Data.corrected_line = corrected_line;
-    Gui_Elements.xoffset = xoffset;
-    Gui_Elements.yoffset = yoffset;
-    Gui_Elements.data_brush = h;
-    assignin('base', 'Data', Data);
-    assignin('base', 'Gui_Elements', Gui_Elements);
-end
-
-function DoFit(~, ~)
-    Gui_Elements = evalin('base', 'Gui_Elements');
-    Data = evalin('base', 'Data');
-    
-    results_table = Gui_Elements.results_table;
-    ax2 = Gui_Elements.ax2;
-    corrected_line = Data.corrected_line;
-    orig_line = Data.orig_line;
-    
-    A_bl_range = Data.A_bl_range;
-    
-    brushed = find(get(corrected_line, 'BrushData'));
-    brushed_x = corrected_line.XData(brushed)';
-    brushed_y = corrected_line.YData(brushed)';
-    B_fit_range = [brushed_x brushed_y];
-    bl_x = A_bl_range(:,1);
-    bl_y = A_bl_range(:,2);
-    
-    % fit des Modells
-    ReloadPythonModule('pyFit')
-
-    % Versuche den in FR_relative angegebenen fitbereich umzusetzen
-    if isempty(B_fit_range)
-        [Xr, Xl, FR_relative, new_fit_range] = CalculateRelativeFitRange(FR_relative_border, corrected_line.XData, corrected_line.YData, B_fit_range);
-        if ~isempty(new_fit_range) 
-            B_fit_range = new_fit_range;
-        end
-
-        if ~isempty(new_fit_range)
-            ax = findobj('Tag', 'fit_data');
-            if ~isempty(ax)
-                hold(ax, 'on');
-                plot(B_fit_range(:,1), B_fit_range(:,2), 'rx');
-                hold(ax, 'off');
-            end
-        end
-    elseif ~isempty(B_fit_range)
-        % wenn FR_relative_border leer sind, müssen die Grenzen des
-        % ausgewählten fitbereichs berechnet werden
-        [Xr, Xl, FR_relative, ~] = CalculateRelativeFitRange([], corrected_line.XData, corrected_line.YData, B_fit_range);
-    else
-        return
-    end
-
-    % sollte FR_relative leer sein muss die variable B_fit_range per Databrush
-    % gesetz werden
-    if isempty(B_fit_range)
-        return
-    else
-        Weg = B_fit_range(:,1);
-        Kraft = -B_fit_range(:,2); 
-    end
-
-    % initial Values
-    T = 300;
-    kb = 1.38e-23;
-    Ks_init = 28;
-    Lc_init = 0.5e-6;
-    lk_init = 5.4e-10;
-
-    Lc_init = py.pyFit.InitialLc(Kraft, Weg, Ks_init, Lc_init, lk_init, kb, T);
-    values = cell(py.pyFit.LmfitModel(Kraft, Weg, Ks_init, Lc_init, lk_init, kb, T, [1, 0, 1])); 
-
-    Ks_fit = values{1,1};
-    Lc_fit = values{1,2}; % kurve wurde vorher auf x=0 verschoben
-    lk_fit = values{1,3};
-
-    F = linspace(mean(bl_y), 1e-9,1e3); 
-    ex_fit = m_FJC(F + mean(bl_y), [Ks_fit Lc_fit lk_fit], [kb T]) + mean(bl_x); % um den Fit an den Orginaldaten zu zeigen, müssen Offsets wieder drauf gerechnet werden
-    
-    cla(ax2)
-    hold(ax2, 'on')
-    plot(orig_line(:,1), orig_line(:,2), '.b');
-    plot(ex_fit, -F, 'r-');
-    hold(ax2, 'off')
-    title(ax2, 'Fit Ergebnis');
-
-    % korrektur der Konturlänge
-    % der Abriss wurde aus Gründen des Fits in x-Richtung auf null gesetzt.
-    % Dieser Wert wird im Nachhinein wieder auf den Fitwert von Lc addiert. Der
-    % Fitwert nur für den Abriss wird als "Lc_fit" bezeichnet, der Wert für die
-    % "echte" länge des Abrisses im Koordinatensystem wird als Position
-    % bezeichent
-    position = Lc_fit + bl_x(1);
-    
-    fitValues = table(Ks_fit, position, lk_fit, Xl, Xr, FR_relative, Lc_fit);
-    results_table.ColumnFormat = {'numeric','numeric', 'numeric', 'numeric', 'numeric', 'numeric', 'numeric'};
-    results_table.Data = [Ks_fit position lk_fit Xl Xr FR_relative Lc_fit];
-    
-    % Schreibe die Tabelle fitValues in den "base" Workspace als Output
-    Data.fitValues = fitValues;
-    Data.B_fit_range = B_fit_range;
-    Gui_Elements.results_table = results_table;
-    Gui_Elements.ax2 = ax2;
-    assignin('base', 'Gui_Elements', Gui_Elements);
-    assignin('base', 'Data', Data);
-
-end
-
-function reimport_data_btn_callback(~, ~)
-    try
-        DataSelection = evalin('base', 'DataSelection');
-        Gui_Elements = evalin('base', 'Gui_Elements');
-        Data = evalin('base', 'Data');
-    catch
-        return
-    end
-    
-    ax1 = Gui_Elements.ax1;
-    ax2 = Gui_Elements.ax2;
-    x_orig = DataSelection(:,1);
-    y_orig = DataSelection(:,2);
-    
-    try
-        xoffset = Gui_Elements.xoffset;
-        yoffset = Gui_Elements.yoffset;
-        delete(xoffset);
-        delete(yoffset);
-    catch
-    end
-    
-    % setzte alle axes neu auf
-    cla(ax1);
-    hold(ax1, 'on');
-    plot(ax1, x_orig, y_orig, 'b.',...
-        'ButtonDownFcn', @SetStartPoint);
-    hold(ax1, 'off');
-    
-    cla(ax2);
-    
-    % weise orig_line neue Daten zu
-    Data.orig_line = [x_orig y_orig];
-    
-    
-    
-    % output in den "base workspace"
-    assignin('base', 'Data', Data);
-end
-
-function new_fitrange_btn_callback(~, ~)
-        Gui_Elements = evalin('base', 'Gui_Elements');
-        Data = evalin('base', 'Data');
-        x = Data.x;
-        y = Data.y;
-        ax2 = Gui_Elements.ax2;
-        
-        
-        cla(ax2);
-        hold(ax2, 'on');
-        corrected_line = plot(ax2, x, y, 'b.');
-        hold(ax2, 'off');
-        title(ax2, 'Wähle Fitbereich');
-
-        Gui_Elements.ax2 = ax2;
-        Data.corrected_line = corrected_line;
-        assignin('base', 'Gui_Elements', Gui_Elements);
-        assignin('base', 'Data', Data);
-end
-
-function data_brush_btn_callback(src, ~)
-    Gui_Elements = evalin('base', 'Gui_Elements');
-    h = Gui_Elements.data_brush;
-    reimport_data_btn = Gui_Elements.reimport_data_btn;
-    new_fitrange_btn = Gui_Elements.new_fitrange_btn;
-    ax1 = Gui_Elements.ax1;
-    
-    try
-        xoffset = Gui_Elements.xoffset;
-        yoffset = Gui_Elements.yoffset;
-    catch
-    end
-    
-    switch src.Value
-        case src.Min % Raised
-            h.Enable = 'off';
-            reimport_data_btn.Enable = 'on';
-            new_fitrange_btn.Enable = 'on';
-            ax1.PickableParts = 'visible';
-            for i = 1:length(ax1.Children)
-                ax1.Children(i).PickableParts = 'visible';
-            end
-            try
-                xoffset.PickableParts = 'visible';
-                yoffset.PickableParts = 'visible';
-            catch
-            end
-        case src.Max % Depressed
-            h.Enable = 'on';
-            reimport_data_btn.Enable = 'off';
-            new_fitrange_btn.Enable = 'off';
-            ax1.PickableParts = 'none';
-            for i = 1:length(ax1.Children)
-                ax1.Children(i).PickableParts = 'none';
-            end
-            try
-                xoffset.PickableParts = 'none';
-                yoffset.PickableParts = 'none';
-            catch
-            end
-    end
-end
-
-function TableResizeCallback(~, ~)
-    Gui_Elements = evalin('base', 'Gui_Elements');
-    table = Gui_Elements.results_table;
-    table_width = table.Position(3);
-    row_name_width = Gui_Elements.results_table_row_name_width;
-    
-    % berechne die neue spaltenbreite
-    new_col_width = (table_width - row_name_width)/7;
-    
-    % passe spaltenbreite an
-    table.ColumnWidth = num2cell(ones(1,7).*new_col_width);
-end
-
-function SlidePanelResizeCallback(src, ~)
-    Gui_Elements = evalin('base', 'Gui_Elements');
-    axes_box = Gui_Elements.axes_box;
-    long = Gui_Elements.slide_panel_extended_width;
-    short = Gui_Elements.slide_panel_shrinked_width;
-    
-    switch src.Value
-        case src.Min % Raised
-            src.String = '>>';
-            axes_box.Widths(1) = short;
-        case src.Max % Depressed
-            src.String = '<<';
-            axes_box.Widths(1) = long;
-    end
-end
