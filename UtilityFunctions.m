@@ -74,6 +74,15 @@ classdef UtilityFunctions
             line.String = text;
         end % textLine
         
+        function outVar = conversion(inVar)
+            outVar = ones(1, length(inVar));
+            for i = 1:length(inVar)
+                if inVar(i) == true
+                    outVar(i) = 0;
+                end
+            end
+        end % conversion
+        
     end
     
 end

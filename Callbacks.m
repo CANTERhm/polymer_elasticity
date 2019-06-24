@@ -18,7 +18,7 @@ classdef Callbacks
                 title(ax2, 'Wähle Fitbereich');
 
                 Gui_Elements.ax2 = ax2;
-                Data.corrected_line = corrected_line;
+                Data.corrected_line_object = corrected_line;
                 assignin('base', 'Gui_Elements', Gui_Elements);
                 assignin('base', 'Data', Data);
         end % new_fit_range_btn_callback
@@ -224,7 +224,8 @@ classdef Callbacks
             Data.bl_x = bl_x;
             Data.bl_y = bl_y;
             Data.A_bl_range = A_bl_range;
-            Data.corrected_line = corrected_line;
+            Data.corrected_line_object = corrected_line;
+            Data.corrected_line = [x y];
             Gui_Elements.xoffset = xoffset;
             Gui_Elements.yoffset = yoffset;
             Gui_Elements.data_brush = h;
@@ -238,14 +239,29 @@ classdef Callbacks
 
             results_table = Gui_Elements.results_table;
             ax2 = Gui_Elements.ax2;
-            corrected_line = Data.corrected_line;
-            orig_line = Data.orig_line;
+            try
+                corrected_line = Data.corrected_line;
+                corrected_line_object = Data.corrected_line_object;
+                orig_line = Data.orig_line;
+            catch
+                return
+            end
 
             A_bl_range = Data.A_bl_range;
 
-            brushed = find(get(corrected_line, 'BrushData'));
-            brushed_x = corrected_line.XData(brushed)';
-            brushed_y = corrected_line.YData(brushed)';
+            try
+                brushed = find(get(corrected_line_object, 'BrushData'));
+                brushed_x = corrected_line_object.XData(brushed)';
+                brushed_y = corrected_line_object.YData(brushed)';
+                Data.brushed_data = [brushed_x brushed_y];
+            catch
+                if ~isempty(Data.brushed_data)
+                    brushed_x = Data.brushed_data(:,1);
+                    brushed_y = Data.brushed_data(:,2);
+                else
+                    return
+                end
+            end
             B_fit_range = [brushed_x brushed_y];
             bl_x = A_bl_range(:,1);
             bl_y = A_bl_range(:,2);
@@ -255,7 +271,7 @@ classdef Callbacks
 
             % Versuche den in FR_relative angegebenen fitbereich umzusetzen
             if isempty(B_fit_range)
-                [Xr, Xl, FR_relative, new_fit_range] = UtilityFunctions.CalculateRelativeFitRange(FR_relative_border, corrected_line.XData, corrected_line.YData, B_fit_range);
+                [Xr, Xl, FR_relative, new_fit_range] = UtilityFunctions.CalculateRelativeFitRange(Data.FR_relative_border, corrected_line(:,1), corrected_line(:,2), B_fit_range);
                 if ~isempty(new_fit_range) 
                     B_fit_range = new_fit_range;
                 end
@@ -271,7 +287,7 @@ classdef Callbacks
             elseif ~isempty(B_fit_range)
                 % wenn FR_relative_border leer sind, müssen die Grenzen des
                 % ausgewählten fitbereichs berechnet werden
-                [Xr, Xl, FR_relative, ~] = UtilityFunctions.CalculateRelativeFitRange([], corrected_line.XData, corrected_line.YData, B_fit_range);
+                [Xr, Xl, FR_relative, ~] = UtilityFunctions.CalculateRelativeFitRange([], corrected_line(:,1), corrected_line(:,2), B_fit_range);
             else
                 return
             end
@@ -286,14 +302,17 @@ classdef Callbacks
             end
 
             % initial Values
-            T = 300;
-            kb = 1.38e-23;
-            Ks_init = 28;
-            Lc_init = 0.5e-6;
-            lk_init = 5.4e-10;
+            T = Data.parameter.constant_parameter.T;
+            kb = Data.parameter.constant_parameter.kb;
+            Ks_init = Data.parameter.variable_parameter.Ks;
+            Lc_init = Data.parameter.variable_parameter.Lc;
+            lk_init = Data.parameter.variable_parameter.lk;
+            hold_params = UtilityFunctions.conversion([Data.parameter.hold_parameter.Ks,...
+                Data.parameter.hold_parameter.Lc,...
+                Data.parameter.hold_parameter.lk]);
 
             Lc_init = py.pyFit.InitialLc(Kraft, Weg, Ks_init, Lc_init, lk_init, kb, T);
-            values = cell(py.pyFit.LmfitModel(Kraft, Weg, Ks_init, Lc_init, lk_init, kb, T, [1, 0, 1])); 
+            values = cell(py.pyFit.LmfitModel(Kraft, Weg, Ks_init, Lc_init, lk_init, kb, T, hold_params)); 
 
             Ks_fit = values{1,1};
             Lc_fit = values{1,2}; % kurve wurde vorher auf x=0 verschoben
@@ -330,6 +349,83 @@ classdef Callbacks
             assignin('base', 'Data', Data);
 
         end % DoFit
+        
+        function UpdateVaryParameterCallback(~, evt)
+            % input
+            Data = evalin('base', 'Data');
+            
+            row = evt.Indices(1);
+            col = evt.Indices(2);
+            switch row
+                case 1
+                    switch col
+                        case 1
+                            try
+                                Data.parameter.variable_parameter.Ks = str2double(evt.EditData);
+                            catch
+                                return
+                            end
+                        case 3
+                            Data.parameter.hold_parameter.Ks = evt.EditData;
+                    end
+                case 2
+                    switch col
+                        case 1
+                            try
+                                Data.parameter.variable_parameter.Lc = str2double(evt.EditData);
+                            catch
+                                return
+                            end
+                        case 3
+                            Data.parameter.hold_parameter.Lc = evt.EditData;
+                    end
+                case 3
+                    switch col
+                        case 1
+                            try
+                                Data.parameter.variable_parameter.lk = str2double(evt.EditData);
+                            catch
+                                return
+                            end
+                        case 3
+                            Data.parameter.hold_parameter.lk = evt.EditData;
+                    end
+            end
+            
+            % tigger das Event um alle verbundenen Listenercallbacks
+            % auszuführen
+            Data.parameter.variable_parameter.FireEvent('UpdateObject');
+            
+            % output
+            assignin('base', 'Data', Data);
+        end % UpdateParameterCallback
+        
+        function UpdateConstantParameterCallback(~, evt)
+            % input
+            Data = evalin('base', 'Data');
+            
+            row = evt.Indices(1);          
+            switch row
+                case 1
+                    try
+                        Data.parameter.constant_parameter.kb = str2double(evt.EditData);
+                    catch
+                        return
+                    end
+                case 2
+                    try
+                        Data.parameter.constant_parameter.T = str2double(evt.EditData);
+                    catch
+                        return
+                    end
+            end
+            % tigger das Event um alle verbundenen Listenercallbacks
+            % auszuführen
+            Data.parameter.constant_parameter.FireEvent('UpdateObject');
+            
+            % output
+            assignin('base', 'Data', Data);
+        end % UpdateConstantParameterCallback
         
     end
     

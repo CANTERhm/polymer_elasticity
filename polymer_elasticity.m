@@ -8,9 +8,38 @@
 %
 % Für eine Detailierte Anleitung siehe den Hilfe Tab im Slide-Menü von
 % polymere_elasticity
+% clearvars -except ForceCurves DataSelection savepath
+
+%% erstelle parameter
+vary_parameter = Results();
+constant_parameter = Results();
+hold_parameter = Results();
+
+vary_parameter.addproperty('Ks');
+vary_parameter.addproperty('Lc');
+vary_parameter.addproperty('lk');
+vary_parameter.Ks = 28;
+vary_parameter.Lc = 0.5e-6;
+vary_parameter.lk = 5.4e-10;
+
+constant_parameter.addproperty('T');
+constant_parameter.addproperty('kb');
+constant_parameter.T = 300;
+constant_parameter.kb = 1.38e-23;
+
+hold_parameter.addproperty('Ks');
+hold_parameter.addproperty('Lc');
+hold_parameter.addproperty('lk');
+hold_parameter.Ks = false;
+hold_parameter.Lc = false;
+hold_parameter.lk = true;
+
+lh = PropListener();
+lh.addListener(vary_parameter, 'UpdateObject', @Callbacks.DoFit);
+lh.addListener(constant_parameter, 'UpdateObject', @Callbacks.DoFit);
+lh.addListener(hold_parameter, 'UpdateObject', @Callbacks.DoFit);
 
 %% daten einlesen
-clearvars -except ForceCurves DataSelection savepath
 
 x_orig = DataSelection(:,1);
 y_orig = DataSelection(:,2);
@@ -94,23 +123,27 @@ constant_parameter_container = uix.VBox('Parent', constant_parameter_panel);
 
 % inhalt vary_parameter_container
 
-vary_data = {28, 'N/m', true; 0.5e-6, 'm', false; 5.4e-10, 'm', true};
+vary_data = {vary_parameter.Ks, 'N/m', hold_parameter.Ks;...
+    vary_parameter.Lc, 'm', hold_parameter.Lc;...
+    vary_parameter.lk, 'm', hold_parameter.lk};
 
 vary_parameter_table = uitable(vary_parameter_container);
 vary_parameter_table.ColumnName = {'Wert', 'Einheit', 'fixieren?'};
 vary_parameter_table.RowName = {'Ks', 'Lc', 'lk'};
 vary_parameter_table.Data = vary_data;
 vary_parameter_table.ColumnEditable = [true false true];
+vary_parameter_table.CellEditCallback = @Callbacks.UpdateVaryParameterCallback;
 
 % inhalt constant_parameter_container
 
-constant_data = {1.38e-23, 'J/K'; 300, 'K'};
+constant_data = {constant_parameter.kb, 'J/K'; constant_parameter.T, 'K'};
 
 constant_parameter_table = uitable(constant_parameter_container);
 constant_parameter_table.ColumnName = {'Wert', 'Einheit'};
 constant_parameter_table.RowName = {'kb', 'T'};
 constant_parameter_table.Data = constant_data;
 constant_parameter_table.ColumnEditable = [true false];
+constant_parameter_table.CellEditCallback = @Callbacks.UpdateConstantParameterCallback;
 
 %% slide-panel: hilfe-tab
 help_panel = uix.ScrollingPanel('Parent', slide_panel);
@@ -285,9 +318,11 @@ Gui_Elements.slide_panel_shrinked_width = shrinked_width;
 
 %% erstelle Data 
 Data.orig_line = [x_orig y_orig];
+Data.brushed_data = [];
 Data.FR_relative_border = FR_relative_border;
-Data.parameter.variable_data = vary_data;
-Data.parameter.constant_data = constant_data;
+Data.parameter.variable_parameter = vary_parameter;
+Data.parameter.constant_parameter = constant_parameter;
+Data.parameter.hold_parameter = hold_parameter;
 
 %% löschen unnötiger Variablen
 clearvars -except ForceCurves DataSelection savepath Data Gui_Elements
