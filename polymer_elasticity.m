@@ -279,19 +279,11 @@ slide_panel_container.Widths = [-1 20];
 slide_panel.TabTitles = {'Modellparameter', 'Hilfe'};
 slide_panel.TabWidth = 100;
 
-%% erstelle axes für den Fit
-ax2 = axes(axes_box);
-ax2.Tag = 'np_correction';
-title('---');
-xlabel('vertical tip position / m');
-grid on
-grid minor
-
-ax1 = axes(axes_box);
-plot(ax1, x_orig, y_orig, 'b.',...
+%% erstelle main_axes für den Fit
+main_axes = axes(axes_box);
+main_axes.Tag = 'main_axes';
+orig_line_object = plot(main_axes, x_orig, y_orig, 'b.',...
     'ButtonDownFcn', @Callbacks.SetStartPoint);
-ax1.Tag = 'np_data';
-title('Wähle Nullpunkt des Abrisses');
 xlabel('vertical tip position / m');
 ylabel('vertical deflection / N')
 grid on
@@ -304,8 +296,7 @@ h.ActionPostCallback = @Callbacks.DoFit;
 
 %% erstelle Gui_Elements 
 Gui_Elements.fig = fig;
-Gui_Elements.ax1 = ax1;
-Gui_Elements.ax2 = ax2;
+Gui_Elements.main_axes = main_axes;
 Gui_Elements.base = base;
 Gui_Elements.axes_box = axes_box;
 Gui_Elements.control_box = control_box;
@@ -324,6 +315,7 @@ Gui_Elements.slide_panel_extended_width = extended_width;
 Gui_Elements.slide_panel_shrinked_width = shrinked_width;
 
 %% erstelle Data 
+Data.orig_line_object = orig_line_object;
 Data.orig_line = [x_orig y_orig];
 Data.brushed_data = [];
 Data.FR_relative_border = FR_relative_border;
