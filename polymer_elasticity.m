@@ -91,13 +91,13 @@ axes_box.Spacing = 0;
 
 %% spaltennamen für results_table
 results_table.ColumnName = {'Ks Fit', 'Abriss Länge', 'lk Fit', 'Xl', 'Xr', 'Distanz', 'Lc Fit'};
-results_table.ColumnWidth = num2cell(75.*ones(1,length(results_table.ColumnWidth)));
+results_table.RowName = {};
 
-% %initiale breite der Spalten 
-column_num = length(results_table.ColumnName); % Anzahl der spalten
-overall_content_width = results_table.Extent(3); % gesamtbreite der tabelle
-column_width = results_table.ColumnWidth{1}; % breite der spalten für parameter (insgesamt 7 parameter)
-row_name_width = overall_content_width-column_num*column_width; % breite der spalte mit Zeilennamen
+% calculate ColumnWidth
+table_width = results_table.Position(3);
+col_num = length(results_table.ColumnName);
+col_width = floor(table_width/col_num);
+results_table.ColumnWidth = {col_width};
 
 %% erstelle slide-panel 
 % das slide_panel ist eine die erste spalte der axes_box. Diese wird belegt
@@ -121,24 +121,25 @@ constant_parameter_container = uix.VBox('Parent', constant_parameter_panel);
 
 % content of vary_parameter_container
 
-vary_data = {vary_parameter.Ks, 'N/m', hold_parameter.Ks;...
-    vary_parameter.Lc, 'm', hold_parameter.Lc;...
-    vary_parameter.lk, 'm', hold_parameter.lk};
+vary_data = {'Ks', vary_parameter.Ks, 'N/m', hold_parameter.Ks;...
+            'Lc', vary_parameter.Lc, 'm', hold_parameter.Lc;...
+            'lk', vary_parameter.lk, 'm', hold_parameter.lk};
 
 vary_parameter_table = uitable(vary_parameter_container);
-vary_parameter_table.ColumnName = {'Wert', 'Einheit', 'fixieren?'};
-vary_parameter_table.RowName = {'Ks', 'Lc', 'lk'};
+vary_parameter_table.ColumnName = {'Parameter', 'Wert', 'Einheit', 'fixieren?'};
+vary_parameter_table.RowName = {};
 vary_parameter_table.Data = vary_data;
 vary_parameter_table.ColumnEditable = [true false true];
 vary_parameter_table.CellEditCallback = @Callbacks.UpdateVaryParameterCallback;
 
 % content of constant_parameter_container
 
-constant_data = {constant_parameter.kb, 'J/K'; constant_parameter.T, 'K'};
+constant_data = {'kb', constant_parameter.kb, 'J/K';...
+                'T', constant_parameter.T, 'K'};
 
 constant_parameter_table = uitable(constant_parameter_container);
-constant_parameter_table.ColumnName = {'Wert', 'Einheit'};
-constant_parameter_table.RowName = {'kb', 'T'};
+constant_parameter_table.ColumnName = {'Parameter', 'Wert', 'Einheit'};
+constant_parameter_table.RowName = {};
 constant_parameter_table.Data = constant_data;
 constant_parameter_table.ColumnEditable = [true false];
 constant_parameter_table.CellEditCallback = @Callbacks.UpdateConstantParameterCallback;
@@ -314,13 +315,11 @@ Gui_Elements.new_fitrange_btn = new_fitrange_btn;
 Gui_Elements.data_brush_btn = data_brush_btn;
 Gui_Elements.reimport_data_btn = reimport_data_btn;
 Gui_Elements.data_brush = h;
-Gui_Elements.results_table_column_width = column_width;
-Gui_Elements.results_table_column_num = column_num;
-Gui_Elements.results_table_row_name_width = row_name_width;
-Gui_Elements.results_table_overall_content_width = overall_content_width;
 Gui_Elements.slide_panel_container = slide_panel_container;
 Gui_Elements.slide_panel = slide_panel;
 Gui_Elements.slide_btn = slide_btn;
+Gui_Elements.slide_panel_vary_parameter_table = vary_parameter_table;
+Gui_Elements.slide_panel_constant_parameter_table = constant_parameter_table;
 Gui_Elements.slide_panel_extended_width = extended_width;
 Gui_Elements.slide_panel_shrinked_width = shrinked_width;
 

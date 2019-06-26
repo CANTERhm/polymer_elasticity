@@ -120,13 +120,12 @@ classdef Callbacks
             Gui_Elements = evalin('base', 'Gui_Elements');
             table = Gui_Elements.results_table;
             table_width = table.Position(3);
-            row_name_width = Gui_Elements.results_table_row_name_width;
 
             % berechne die neue spaltenbreite
-            new_col_width = (table_width - row_name_width)/7;
+            new_col_width = floor(table_width/length(table.ColumnName));
 
             % passe spaltenbreite an
-            table.ColumnWidth = num2cell(ones(1,7).*new_col_width);
+            table.ColumnWidth = {new_col_width};
         end % TableResizeCallback
         
         function SlidePanelResizeCallback(src, ~)
@@ -136,7 +135,8 @@ classdef Callbacks
             axes_box = Gui_Elements.axes_box;
             long = Gui_Elements.slide_panel_extended_width;
             short = Gui_Elements.slide_panel_shrinked_width;
-
+            
+            % unfolding behavior
             switch src.Value
                 case src.Min % Raised
                     src.String = '>>';
@@ -146,7 +146,7 @@ classdef Callbacks
                     axes_box.Widths(1) = long;
             end
         end % SlidePanelResizeCallback
-
+        
     end
     
     methods(Static) % other Callbacks
@@ -260,19 +260,26 @@ classdef Callbacks
             end
 
             A_bl_range = Data.A_bl_range;
-
+            
             try
                 brushed = find(get(corrected_line_object, 'BrushData'));
-                brushed_x = corrected_line_object.XData(brushed)';
-                brushed_y = corrected_line_object.YData(brushed)';
-                Data.brushed_data = [brushed_x brushed_y];
-            catch
-                if ~isempty(Data.brushed_data)
-                    brushed_x = Data.brushed_data(:,1);
-                    brushed_y = Data.brushed_data(:,2);
-                else
-                    return
+            catch ME % if you can
+                switch ME.identifier
+                    case 'MATLAB:class:InvalidHandle'
+                        % corrected_line_object has been deleted
+                        return
                 end
+            end
+            brushed_x = corrected_line_object.XData(brushed)';
+            brushed_y = corrected_line_object.YData(brushed)';
+            if ~isempty(brushed)
+                Data.brushed_data = [brushed_x brushed_y];
+            end
+            if isempty(brushed) && ~isempty(Data.brushed_data)
+                brushed_x = Data.brushed_data(:,1);
+                brushed_y = Data.brushed_data(:,2);
+            elseif isempty(brushed) && isempty(Data.brushed_data)
+                return
             end
             B_fit_range = [brushed_x brushed_y];
             bl_x = A_bl_range(:,1);
@@ -335,8 +342,8 @@ classdef Callbacks
 
             cla(ax2)
             hold(ax2, 'on')
-            plot(orig_line(:,1), orig_line(:,2), '.b');
-            plot(ex_fit, -F, 'r-');
+            plot(ax2, orig_line(:,1), orig_line(:,2), '.b');
+            plot(ax2, ex_fit, -F, 'r-');
             hold(ax2, 'off')
             title(ax2, 'Fit Ergebnis');
 
@@ -347,8 +354,13 @@ classdef Callbacks
             % "echte" länge des Abrisses im Koordinatensystem wird als Position
             % bezeichent
             position = Lc_fit + bl_x(1);
-
-            fitValues = table(Ks_fit, position, lk_fit, Xl, Xr, FR_relative, Lc_fit);
+            
+            try
+                fitValues = table(Ks_fit, position, lk_fit, Xl, Xr, FR_relative, Lc_fit);
+            catch
+                % something went wrong, do nothing
+                fitValues = [];
+            end
             results_table.ColumnFormat = {'numeric','numeric', 'numeric', 'numeric', 'numeric', 'numeric', 'numeric'};
             results_table.Data = [Ks_fit position lk_fit Xl Xr FR_relative Lc_fit];
 
