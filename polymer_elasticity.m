@@ -141,7 +141,7 @@ constant_parameter_table = uitable(constant_parameter_container);
 constant_parameter_table.ColumnName = {'Parameter', 'Wert', 'Einheit'};
 constant_parameter_table.RowName = {};
 constant_parameter_table.Data = constant_data;
-constant_parameter_table.ColumnEditable = [true false];
+constant_parameter_table.ColumnEditable = [true false]; 
 constant_parameter_table.CellEditCallback = @Callbacks.UpdateConstantParameterCallback;
 
 % configure the DoFit button
