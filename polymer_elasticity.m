@@ -129,7 +129,7 @@ vary_parameter_table = uitable(vary_parameter_container);
 vary_parameter_table.ColumnName = {'Parameter', 'Wert', 'Einheit', 'fixieren?'};
 vary_parameter_table.RowName = {};
 vary_parameter_table.Data = vary_data;
-vary_parameter_table.ColumnEditable = [true false true];
+vary_parameter_table.ColumnEditable = [false true false true];
 vary_parameter_table.CellEditCallback = @Callbacks.UpdateVaryParameterCallback;
 
 % content of constant_parameter_container
@@ -141,7 +141,7 @@ constant_parameter_table = uitable(constant_parameter_container);
 constant_parameter_table.ColumnName = {'Parameter', 'Wert', 'Einheit'};
 constant_parameter_table.RowName = {};
 constant_parameter_table.Data = constant_data;
-constant_parameter_table.ColumnEditable = [true false]; 
+constant_parameter_table.ColumnEditable = [false true false]; 
 constant_parameter_table.CellEditCallback = @Callbacks.UpdateConstantParameterCallback;
 
 % configure the DoFit button
