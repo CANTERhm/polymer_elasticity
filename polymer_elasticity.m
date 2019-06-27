@@ -33,14 +33,13 @@ hold_parameter.addproperty('Ks');
 hold_parameter.addproperty('Lc');
 hold_parameter.addproperty('lk');
 hold_parameter.Ks = false;
-hold_parameter.Lc = false;
+hold_parameter.Lc = true;
 hold_parameter.lk = true;
 
 %% daten einlesen
 
 x_orig = DataSelection(:,1);
 y_orig = DataSelection(:,2);
-FR_relative_border = [0.95 1];
 fig = findobj('Tag', 'polymer_elasticity');
 Gui_Elements = struct();
 Data = struct();
@@ -330,6 +329,8 @@ Gui_Elements.fit_range_object = [];
 %% erstelle Data 
 Data.orig_line_object = orig_line_object;
 Data.orig_line = [x_orig y_orig];
+Data.fit_line_object = [];
+Data.fit_line = [];
 Data.brushed_data = [];
 Data.FR_left_border = [];
 Data.FR_right_border = [];

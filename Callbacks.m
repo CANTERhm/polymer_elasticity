@@ -371,19 +371,14 @@ classdef Callbacks
             Lc_fit = values{1,2}; % kurve wurde vorher auf x=0 verschoben
             lk_fit = values{1,3};
             
-            if ~isempty(bl_y)
-                F = linspace(mean(bl_y), 1e-9,1e3); 
-                ex_fit = m_FJC(F + mean(bl_y), [Ks_fit Lc_fit lk_fit], [kb T]) + mean(bl_x); % um den Fit an den Orginaldaten zu zeigen, müssen Offsets wieder drauf gerechnet werden
-            else
-                F = linspace(0, 1e-9,1e3);
-                ex_fit = m_FJC(F, [Ks_fit Lc_fit lk_fit], [kb T]); 
-            end
+            F = linspace(0, 1e-9,1e3); 
+            ex_fit = m_FJC(F, [Ks_fit Lc_fit lk_fit], [kb T]);
             
             cla(main_axes)
             hold(main_axes, 'on')
             orig_line_object = plot(main_axes, orig_line(:,1), orig_line(:,2), '.b',...
                 'ButtonDownFcn', @Callbacks.SetStartPoint);
-            plot(main_axes, ex_fit, -F, 'r-');
+            fit_line_object = plot(main_axes, ex_fit + mean(bl_x), -F + mean(bl_y), 'r-');
             fit_range_object = UtilityFunctions.plotFitRange(main_axes,...
                 orig_line, Xl, Xr);
             hold(main_axes, 'off')
@@ -413,6 +408,8 @@ classdef Callbacks
             Gui_Elements.fit_range_object = fit_range_object;
             Data.fitValues = fitValues;
             Data.orig_line_object = orig_line_object;
+            Data.fit_line_object = fit_line_object;
+            Data.fit_line = [fit_line_object.XData' fit_line_object.YData']; 
             Data.FR_left_border = Xl;
             Data.FR_right_border = Xr;
             assignin('base', 'Data', Data);
@@ -432,35 +429,35 @@ classdef Callbacks
             switch row
                 case 1
                     switch col
-                        case 1
+                        case 2
                             try
                                 Data.parameter.variable_parameter.Ks = str2double(evt.EditData);
                             catch
                                 return
                             end
-                        case 3
+                        case 4
                             Data.parameter.hold_parameter.Ks = evt.EditData;
                     end
                 case 2
                     switch col
-                        case 1
+                        case 2
                             try
                                 Data.parameter.variable_parameter.Lc = str2double(evt.EditData);
                             catch
                                 return
                             end
-                        case 3
+                        case 4
                             Data.parameter.hold_parameter.Lc = evt.EditData;
                     end
                 case 3
                     switch col
-                        case 1
+                        case 2
                             try
                                 Data.parameter.variable_parameter.lk = str2double(evt.EditData);
                             catch
                                 return
                             end
-                        case 3
+                        case 4
                             Data.parameter.hold_parameter.lk = evt.EditData;
                     end
             end
