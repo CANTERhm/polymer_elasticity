@@ -33,14 +33,13 @@ hold_parameter.addproperty('Ks');
 hold_parameter.addproperty('Lc');
 hold_parameter.addproperty('lk');
 hold_parameter.Ks = false;
-hold_parameter.Lc = false;
+hold_parameter.Lc = true;
 hold_parameter.lk = true;
 
 %% daten einlesen
 
 x_orig = DataSelection(:,1);
 y_orig = DataSelection(:,2);
-FR_relative_border = [0.95 1];
 fig = findobj('Tag', 'polymer_elasticity');
 Gui_Elements = struct();
 Data = struct();
@@ -279,23 +278,21 @@ slide_panel_container.Widths = [-1 20];
 slide_panel.TabTitles = {'Modellparameter', 'Hilfe'};
 slide_panel.TabWidth = 100;
 
-%% erstelle axes für den Fit
-ax2 = axes(axes_box);
-ax2.Tag = 'np_correction';
-title('---');
-xlabel('vertical tip position / m');
-grid on
-grid minor
-
-ax1 = axes(axes_box);
-plot(ax1, x_orig, y_orig, 'b.',...
+%% erstelle main_axes für den Fit
+main_axes = axes(axes_box);
+main_axes.Tag = 'main_axes';
+orig_line_object = plot(main_axes, x_orig, y_orig, 'b.',...
     'ButtonDownFcn', @Callbacks.SetStartPoint);
-ax1.Tag = 'np_data';
-title('Wähle Nullpunkt des Abrisses');
 xlabel('vertical tip position / m');
 ylabel('vertical deflection / N')
 grid on
 grid minor
+
+% add listener for axis-limits
+z = zoom(fig);
+p = pan(fig);
+z.ActionPostCallback = @Callbacks.ResizeElements;
+p.ActionPostCallback = @Callbacks.ResizeElements;
 
 %% erstelle data brush-object
 h = brush(fig);
@@ -304,17 +301,19 @@ h.ActionPostCallback = @Callbacks.DoFit;
 
 %% erstelle Gui_Elements 
 Gui_Elements.fig = fig;
-Gui_Elements.ax1 = ax1;
-Gui_Elements.ax2 = ax2;
+Gui_Elements.main_axes = main_axes;
+
 Gui_Elements.base = base;
 Gui_Elements.axes_box = axes_box;
 Gui_Elements.control_box = control_box;
 Gui_Elements.btn_box = btn_box;
+
 Gui_Elements.results_table = results_table;
 Gui_Elements.new_fitrange_btn = new_fitrange_btn;
 Gui_Elements.data_brush_btn = data_brush_btn;
 Gui_Elements.reimport_data_btn = reimport_data_btn;
 Gui_Elements.data_brush = h;
+
 Gui_Elements.slide_panel_container = slide_panel_container;
 Gui_Elements.slide_panel = slide_panel;
 Gui_Elements.slide_btn = slide_btn;
@@ -323,10 +322,18 @@ Gui_Elements.slide_panel_constant_parameter_table = constant_parameter_table;
 Gui_Elements.slide_panel_extended_width = extended_width;
 Gui_Elements.slide_panel_shrinked_width = shrinked_width;
 
+Gui_Elements.xoffset = [];
+Gui_Elements.yoffset = [];
+Gui_Elements.fit_range_object = [];
+
 %% erstelle Data 
+Data.orig_line_object = orig_line_object;
 Data.orig_line = [x_orig y_orig];
+Data.fit_line_object = [];
+Data.fit_line = [];
 Data.brushed_data = [];
-Data.FR_relative_border = FR_relative_border;
+Data.FR_left_border = [];
+Data.FR_right_border = [];
 Data.parameter.variable_parameter = vary_parameter;
 Data.parameter.constant_parameter = constant_parameter;
 Data.parameter.hold_parameter = hold_parameter;
