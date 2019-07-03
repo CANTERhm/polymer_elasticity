@@ -291,8 +291,16 @@ grid minor
 % add listener for axis-limits
 z = zoom(fig);
 p = pan(fig);
+lh = PropListener();
 z.ActionPostCallback = @Callbacks.ResizeElements;
 p.ActionPostCallback = @Callbacks.ResizeElements;
+lh.addListener(main_axes, 'XLim', 'PostSet', @Callbacks.ResizeElements);
+lh.addListener(main_axes, 'YLim', 'PostSet', @Callbacks.ResizeElements);
+
+% add contextmenu to save the fit results
+cm = uicontextmenu;
+main_axes.UIContextMenu = cm;
+uimenu(cm, 'Label', 'save Figure', 'Callback', @Callbacks.SaveFigure);
 
 %% erstelle data brush-object
 h = brush(fig);
@@ -322,15 +330,14 @@ Gui_Elements.slide_panel_constant_parameter_table = constant_parameter_table;
 Gui_Elements.slide_panel_extended_width = extended_width;
 Gui_Elements.slide_panel_shrinked_width = shrinked_width;
 
-Gui_Elements.xoffset = [];
-Gui_Elements.yoffset = [];
-Gui_Elements.fit_range_object = [];
-
 %% erstelle Data 
 Data.orig_line_object = orig_line_object;
 Data.orig_line = [x_orig y_orig];
 Data.fit_line_object = [];
 Data.fit_line = [];
+Data.fit_range_object = [];
+Data.xoffset = [];
+Data.yoffset = [];
 Data.brushed_data = [];
 Data.FR_left_border = [];
 Data.FR_right_border = [];

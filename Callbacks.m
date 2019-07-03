@@ -84,8 +84,8 @@ classdef Callbacks
             y_orig = DataSelection(:,2);
 
             try
-                xoffset = Gui_Elements.xoffset;
-                yoffset = Gui_Elements.yoffset;
+                xoffset = Data.xoffset;
+                yoffset = Data.yoffset;
                 delete(xoffset);
                 delete(yoffset);
             catch
@@ -101,6 +101,16 @@ classdef Callbacks
             % weise orig_line neue Daten zu
             Data.orig_line_object = orig_line;
             Data.orig_line = [x_orig y_orig];
+            Data.A_bl_range = [];
+            Data.brushed_data = [];
+            Data.corrected_line = [];
+            Data.fit_line = [];
+            Data.fit_line_object = [];
+            Data.fit_range_object = [];
+            Data.FR_left_border = [];
+            Data.FR_right_border = [];
+            Data.xoffset = [];
+            Data.yoffset = [];
 
             % output in den "base workspace"
             assignin('base', 'Data', Data);
@@ -153,22 +163,22 @@ classdef Callbacks
             Xl = Data.FR_left_border;
             Xr = Data.FR_right_border;
             
-            if ~isempty(Gui_Elements.xoffset)
-                delete(Gui_Elements.xoffset);
+            if ~isempty(Data.xoffset)
+                delete(Data.xoffset);
                 xoffset = vline(mean(A_bl_range(:,1)), 'k--');
-                Gui_Elements.xoffset = xoffset;
+                Data.xoffset = xoffset;
             end
             
-            if ~isempty(Gui_Elements.yoffset)
-                delete(Gui_Elements.yoffset);
+            if ~isempty(Data.yoffset)
+                delete(Data.yoffset);
                 yoffset = hline(mean(A_bl_range(:,2)), 'k--');
-                Gui_Elements.yoffset = yoffset;
+                Data.yoffset = yoffset;
             end
             
-            if ~isempty(Gui_Elements.fit_range_object)
-                delete(Gui_Elements.fit_range_object)
+            if ~isempty(Data.fit_range_object)
+                delete(Data.fit_range_object);
                 fit_range_object = UtilityFunctions.plotFitRange(main_axes, orig_line, Xl, Xr);
-                Gui_Elements.fit_range_object = fit_range_object;
+                Data.fit_range_object = fit_range_object;
             end
 
             assignin('base', 'Gui_Elements', Gui_Elements);
@@ -234,39 +244,38 @@ classdef Callbacks
 
                 % zeichne in dem subplot für Baselinekorrektur die ausgewählte
                 % Stelle ein
-                ax = Gui_Elements.main_axes;
-                cla(ax);
+                cla(main_axes);
                 try
-                    delete(Gui_Elements.xoffset);
+                    delete(Data.xoffset);
                 catch
                 end
 
                 try
-                    delete(Gui_Elements.yoffset);
+                    delete(Data.yoffset);
                 catch
                 end
                 try
-                    delete(Gui_Elements.fit_range_object);
+                    delete(Data.fit_range_object);
                 catch
                 end
-                hold(ax, 'on')
-                orig_line_object = plot(ax, x_orig, y_orig, 'b.',...
+                hold(main_axes, 'on')
+                orig_line_object = plot(main_axes, x_orig, y_orig, 'b.',...
                     'ButtonDownFcn', @Callbacks.SetStartPoint);
                 xoffset = vline(mean(A_bl_range(:,1)), 'k--');
                 yoffset = hline(mean(A_bl_range(:,2)), 'k--');
                 fit_range_object = UtilityFunctions.plotFitRange(main_axes, [x_orig y_orig], Xl, Xr);
                 xoffset.Tag = 'xoffset';
                 yoffset.Tag = 'yoffset';
-                hold(ax, 'off');
+                hold(main_axes, 'off');
             end
 
             % schreibe x,y und A_bl_range in den "base" Workspace als Output
             Data.A_bl_range = A_bl_range;
             Data.orig_line_object = orig_line_object;
             Data.corrected_line = [x y];
-            Gui_Elements.xoffset = xoffset;
-            Gui_Elements.yoffset = yoffset;
-            Gui_Elements.fit_range_object = fit_range_object;
+            Data.xoffset = xoffset;
+            Data.yoffset = yoffset;
+            Data.fit_range_object = fit_range_object;
             Gui_Elements.data_brush = h;
             assignin('base', 'Data', Data);
             assignin('base', 'Gui_Elements', Gui_Elements);
@@ -387,8 +396,8 @@ classdef Callbacks
             % der Abriss wurde aus Gründen des Fits in x-Richtung auf null gesetzt.
             % Dieser Wert wird im Nachhinein wieder auf den Fitwert von Lc addiert. Der
             % Fitwert nur für den Abriss wird als "Lc_fit" bezeichnet, der Wert für die
-            % "echte" länge des Abrisses im Koordinatensystem wird als Position
-            % bezeichent
+            % "echte" länge des Abrisses im Koordinatensystem wird als
+            % "position" bezeichent
             if ~isempty(bl_x)
                 position = Lc_fit + bl_x(1);
             else
@@ -405,17 +414,111 @@ classdef Callbacks
             results_table.Data = [Ks_fit position lk_fit Xl Xr FR_relative Lc_fit];
 
             % Schreibe die Tabelle fitValues in den "base" Workspace als Output
-            Gui_Elements.fit_range_object = fit_range_object;
             Data.fitValues = fitValues;
             Data.orig_line_object = orig_line_object;
             Data.fit_line_object = fit_line_object;
             Data.fit_line = [fit_line_object.XData' fit_line_object.YData']; 
+            Data.fit_range_object = fit_range_object;
             Data.FR_left_border = Xl;
             Data.FR_right_border = Xr;
             assignin('base', 'Data', Data);
             assignin('base', 'Gui_Elements', Gui_Elements);
 
         end % DoFit
+        
+        function SaveFigure(~, ~)
+            Data = evalin('base', 'Data');
+            try
+                orig_line = Data.orig_line;
+            catch
+                orig_line = [];
+            end
+            try
+                fit_line = Data.fit_line;
+            catch
+                fit_line = [];
+            end
+            try
+                Xl = Data.FR_left_border;
+            catch
+                Xl = [];
+            end
+            try
+                Xr = Data.FR_right_border;
+            catch
+                Xr = [];
+            end
+            try
+                bl_range = Data.A_bl_range;
+            catch
+                bl_range = [];
+            end
+            
+            % create figure elements
+            fig = figure('NumberTitle', 'off', 'Name', 'Save Figure', 'Color', 'white');
+            ax = axes(fig);
+            grid on;
+            grid minor;
+            plottools;
+            
+            % sizes of axes elements
+            ax.XLimMode = 'auto';
+            ax.XAxis.Label.String = 'Vertical Tip Position / m';
+            ax.XAxis.FontSize = 30;
+            ax.XAxis.Label.FontSize = 30;
+            ax.XAxis.LineWidth = 0.5;
+            
+            ax.YLimMode = 'auto';
+            ax.YAxis.Label.String = 'Vertical Deflection / N';
+            ax.YAxis.FontSize = 30;
+            ax.YAxis.Label.FontSize = 30;
+            ax.YAxis.LineWidth = 0.5;
+            
+            % plot data
+            if ~isempty(orig_line) 
+                hold(ax, 'on');
+                scatter(ax, orig_line(:,1), orig_line(:,2), 'b.',...
+                    'Marker', '.',...
+                    'MarkerEdgeColor', 'blue',...
+                    'MarkerFaceColor', 'blue',...
+                    'SizeData', 50);
+                hold(ax, 'off');
+            end
+            
+            % plot fitted data
+            if ~isempty(fit_line)
+                hold(ax, 'on');
+                plot(ax, fit_line(:,1), fit_line(:,2), 'r-',...
+                    'LineWidth', 2);
+                hold(ax, 'off');
+            end
+            
+            % tight layout
+            outerpos = ax.OuterPosition;
+            ti = ax.TightInset; 
+            left = outerpos(1) + ti(1);
+            bottom = outerpos(2) + ti(2);
+            ax_width = outerpos(3) - ti(1) - ti(3);
+            ax_height = outerpos(4) - ti(2) - ti(4);
+            ax.Position = [left bottom ax_width ax_height];
+            
+            % mark data offsets and fit range
+            if ~isempty(orig_line) && ~isempty(bl_range) && ...
+                    ~isempty(Xl) && ~isempty(Xr)
+                ax.XLimMode = 'auto';
+                ax.YLimMode = 'auto';
+                hold(ax, 'on');
+                xoffset = vline(mean(bl_range(:,1)), 'k--');
+                yoffset = hline(mean(bl_range(:,2)), 'k--');
+                UtilityFunctions.plotFitRange(ax, orig_line, Xl, Xr);
+                delete(xoffset);
+                xoffset2 = vline(mean(bl_range(:,1)), 'k--');
+                xoffset2.LineWidth = 2;
+                yoffset.LineWidth = 2;
+                hold(ax, 'off');
+            end
+            
+        end % SaveFigure
         
         function UpdateVaryParameterCallback(~, evt)
             % CellEditCallback für die tabelle der variablen parameter des
