@@ -130,6 +130,29 @@ classdef UtilityFunctions
             end
         end % conversion
         
+        function h_obj = plotFitRange(ax, orig_line, left_border, right_border)            
+            % calculate the visualization for fit range
+            left_index = floor(length(orig_line)*left_border/100);
+            right_index = ceil(length(orig_line)*right_border/100);
+            left_border_value = orig_line(left_index);
+            right_border_value = orig_line(right_index);
+            pos_x1 = left_border_value;
+            pos_x2 = right_border_value;
+            pos_y1 = min(ax.YLim);
+            pos_y2 = max(ax.YLim);
+            
+            % vertex positions of polygon
+            xdata = [pos_x1 pos_x2 pos_x2 pos_x1];
+            ydata = [pos_y1 pos_y1 pos_y2 pos_y2];
+            
+            h_obj = patch(ax, 'XData', xdata, 'YData', ydata,...
+                'FaceColor', '#D3D3D3',...
+                'EdgeColor', '#D3D3D3',...
+                'FaceAlpha', 0.5,...
+                'EdgeAlpha', 0.5,...
+                'Tag', 'fit_range');
+        end % ploFitRange
+        
     end
     
 end
