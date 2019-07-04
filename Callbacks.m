@@ -123,15 +123,19 @@ classdef Callbacks
         function TableResizeCallback(~, ~)
             % resize callback für die Tabelle der Fitergebnisse
             
-            Gui_Elements = evalin('base', 'Gui_Elements');
-            table = Gui_Elements.results_table;
-            table_width = table.Position(3);
-
-            % berechne die neue spaltenbreite
-            new_col_width = floor(table_width/length(table.ColumnName));
-
-            % passe spaltenbreite an
-            table.ColumnWidth = {new_col_width};
+%             Gui_Elements = evalin('base', 'Gui_Elements');
+%             table = Gui_Elements.results_table;
+%             table_2 = Gui_Elements.results_table_2;
+%             table_width = table.Position(3);
+%             table_width_2 = table_2.Position(3);
+% 
+%             % berechne die neue spaltenbreite
+%             new_col_width = floor(table_width/length(table.ColumnName));
+%             new_col_width_2 = floor(table_width_2/length(table_2.ColumnName));
+% 
+%             % passe spaltenbreite an
+%             table.ColumnWidth = {new_col_width};
+%             table_2.ColumnWidth = {new_col_width_2};
         end % TableResizeCallback
         
         function SlidePanelResizeCallback(src, ~)
@@ -287,6 +291,7 @@ classdef Callbacks
             Data = evalin('base', 'Data');
 
             results_table = Gui_Elements.results_table;
+            results_table_2 = Gui_Elements.results_table_2;
             main_axes = Gui_Elements.main_axes;
             
             % test for original data
@@ -399,19 +404,25 @@ classdef Callbacks
             % "echte" länge des Abrisses im Koordinatensystem wird als
             % "position" bezeichent
             if ~isempty(bl_x)
-                position = Lc_fit + bl_x(1);
+                rupture_length = Lc_fit + bl_x(1);
             else
-                position = Lc_fit;
+                rupture_length = Lc_fit;
             end
             
             try
-                fitValues = table(Ks_fit, position, lk_fit, Xl, Xr, FR_relative, Lc_fit);
+                xoffset = mean(bl_x);
+                yoffset = mean(bl_y);
+                fitValues = table(Ks_fit, Lc_fit, lk_fit, xoffset, yoffset, Xl, Xr, FR_relative, rupture_length);
             catch
                 % something went wrong, do nothing
+                xoffset = [];
+                yoffset = [];
                 fitValues = [];
             end
-            results_table.ColumnFormat = {'numeric','numeric', 'numeric', 'numeric', 'numeric', 'numeric', 'numeric'};
-            results_table.Data = [Ks_fit position lk_fit Xl Xr FR_relative Lc_fit];
+            results_table.ColumnFormat = {'numeric','numeric', 'numeric', 'numeric'};
+            results_table_2.ColumnFormat = {'numeric', 'numeric', 'numeric', 'numeric', 'numeric'};
+            results_table.Data = [Ks_fit Lc_fit lk_fit rupture_length];
+            results_table_2.Data = [xoffset yoffset Xl Xr FR_relative];
 
             % Schreibe die Tabelle fitValues in den "base" Workspace als Output
             Data.fitValues = fitValues;
