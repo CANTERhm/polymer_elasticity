@@ -109,6 +109,9 @@ results_table.ColumnWidth = {col_width};
 results_table_2.ColumnName = {'xoffset', 'yoffset', 'Xl', 'Xr', 'Distance'};
 results_table_2.RowName = {};
 
+results_table_2.ColumnEditable = [true true true true, false]; 
+results_table_2.CellEditCallback = @Callbacks.UpdateFitParameterCallback;
+
 % calculate ColumnWidth
 g = groot;
 table_width = g.ScreenSize(3)/4;
@@ -342,6 +345,7 @@ Gui_Elements.slide_panel_extended_width = extended_width;
 Gui_Elements.slide_panel_shrinked_width = shrinked_width;
 
 %% erstelle Data 
+Data.A_bl_range = [];
 Data.orig_line_object = orig_line_object;
 Data.orig_line = [x_orig y_orig];
 Data.fit_line_object = [];

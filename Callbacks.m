@@ -578,7 +578,7 @@ classdef Callbacks
             
             % tigger das Event um alle verbundenen Listenercallbacks
             % auszuführen
-            Data.parameter.variable_parameter.FireEvent('UpdateObject');
+%             Data.parameter.variable_parameter.FireEvent('UpdateObject');
             
             % output
             assignin('base', 'Data', Data);
@@ -608,11 +608,70 @@ classdef Callbacks
             end
             % tigger das Event um alle verbundenen Listenercallbacks
             % auszuführen
-            Data.parameter.constant_parameter.FireEvent('UpdateObject');
+%             Data.parameter.constant_parameter.FireEvent('UpdateObject');
             
             % output
             assignin('base', 'Data', Data);
         end % UpdateConstantParameterCallback
+        
+        function UpdateFitParameterCallback(~, evt)
+            % UPDATEFITPARAMETERCALLBACK Update of Fit Parameter if the
+            % user wants to have numerical input of fit parameter like fit
+            % range, fit borders or offsets
+            
+            % input
+            Data = evalin('base', 'Data');
+            Gui_Elements = evalin('base', 'Gui_Elements');
+            main_axes = Gui_Elements.main_axes;
+            
+            col = evt.Indices(2);
+            switch col
+                case 1 % xoffset
+                    try
+                        delete(Data.xoffset);
+                        
+                    catch
+                    end
+                    try
+                        delete(Data.fit_range_object);
+                    catch
+                    end
+                    hold(main_axes, 'on')
+                    xoffset = vline(str2double(evt.EditData), 'k--');
+                    xoffset.Tag = 'xoffset';
+                    hold(main_axes, 'off');
+                    Data.xoffset = xoffset;
+                case 2 % yoffset
+                    try
+                        delete(Data.yoffset);
+                    catch
+                    end
+                    try
+                        delete(Data.fit_range_object);
+                    catch
+                    end
+                    hold(main_axes, 'on')
+                    yoffset = hline(str2double(evt.EditData), 'k--');
+                    yoffset.Tag = 'xoffset';
+                    hold(main_axes, 'off');
+                    Data.yoffset = yoffset;
+                case 3 % Xl
+                    try
+                        Data.FR_left_border = str2double(evt.EditData);
+                    catch
+                        return
+                    end
+                case 4 % Xr
+                    try
+                        Data.FR_right_border = str2double(evt.EditData);
+                    catch
+                        return
+                    end
+            end
+            
+            % output
+            assignin('base', 'Data', Data);
+        end % UpdateFitParameterCallback
         
     end
     
