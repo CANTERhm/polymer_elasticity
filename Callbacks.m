@@ -407,7 +407,10 @@ classdef Callbacks
             Lc_fit = values{1,2}; % kurve wurde vorher auf x=0 verschoben
             lk_fit = values{1,3};
             
-            F = linspace(0, 1e-9,1e3); 
+            % plot of the fitrepresentation
+            max_force = max(abs(orig_line(:,2)));
+            bound = max_force - 1.5e-1*max_force  + mean(bl_y);
+            F = linspace(0, bound,1e3); 
             ex_fit = m_FJC(F, [Ks_fit Lc_fit lk_fit], [kb T]);
             
             cla(main_axes)
