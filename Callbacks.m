@@ -452,6 +452,7 @@ classdef Callbacks
             Data.fit_line_object = fit_line_object;
             Data.fit_line = [fit_line_object.XData' fit_line_object.YData']; 
             Data.fit_range_object = fit_range_object;
+            Data.A_bl_range = A_bl_range
             Data.FR_left_border = Xl;
             Data.FR_right_border = Xr;
             assignin('base', 'Data', Data);
