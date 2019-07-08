@@ -97,6 +97,7 @@ axes_box.Spacing = 0;
 %% columnnames for results_table
 results_table.ColumnName = {'Ks Fit', 'Lc Fit', 'lk Fit', 'Rupture Length'};
 results_table.RowName = {};
+resutls_tabel.Data = {0, 0, 0, 0};
 
 % calculate ColumnWidth
 g = groot;
@@ -108,6 +109,7 @@ results_table.ColumnWidth = {col_width};
 %% columnnames for results_table_2
 results_table_2.ColumnName = {'xoffset', 'yoffset', 'Xl', 'Xr', 'Distance'};
 results_table_2.RowName = {};
+results_table_2.Data = {nan, nan, nan, nan};
 
 results_table_2.ColumnEditable = [true true true true, false]; 
 results_table_2.CellEditCallback = @Callbacks.UpdateFitParameterCallback;
@@ -351,9 +353,11 @@ Data.orig_line = [x_orig y_orig];
 Data.fit_line_object = [];
 Data.fit_line = [];
 Data.fit_range_object = [];
+Data.offsets_from_table = false;
 Data.xoffset = [];
 Data.yoffset = [];
 Data.brushed_data = [];
+Data.borders_from_table = false;
 Data.FR_left_border = [];
 Data.FR_right_border = [];
 Data.parameter.variable_parameter = vary_parameter;
