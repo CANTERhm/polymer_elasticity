@@ -121,7 +121,7 @@ col_num = length(results_table_2.ColumnName);
 col_width = floor(table_width/col_num);
 results_table_2.ColumnWidth = {col_width};
 
-%% erstelle slide-panel 
+%% create slide-panel 
 % das slide_panel ist eine die erste spalte der axes_box. Diese wird belegt
 % mit einer neuen HBox, dessen breite über den Slide-btn varriert werden
 % kann. so wird das "Slide" verhalten erzeugt
@@ -131,7 +131,7 @@ slide_btn = uicontrol('Parent', slide_panel_container, 'Style', 'togglebutton',.
     'String', '>>',...
     'Callback', @Callbacks.SlidePanelResizeCallback);
 
-%% slide-panel: modellparameter-tab
+%% slide-panel: modelparameter-tab
 dialog_container = uix.VBox('Parent', slide_panel);
 vary_parameter_panel = uix.BoxPanel('Parent', dialog_container,...
     'Title', 'Variable Parameters');
@@ -284,13 +284,13 @@ help_container.Heights = [100 -1 -1];
 userguide_container.Heights = [15 -1 15 -1];
 other_container.Heights = [15 -1 15 -1 15 -1];
 
-%% einstellungen slide-panle
+%% settings of slide-panel
 extended_width = 400;
 shrinked_width = 20;
 
 axes_box.Widths(1) = shrinked_width;
 slide_panel_container.Widths = [-1 20];
-slide_panel.TabTitles = {'Modellparameter', 'Hilfe'};
+slide_panel.TabTitles = {'Modelparameter', 'Help'};
 slide_panel.TabWidth = 100;
 
 %% erstelle main_axes für den Fit
