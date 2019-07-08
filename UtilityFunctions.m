@@ -30,6 +30,10 @@ classdef UtilityFunctions
                 % wenn beides, FR_relative_border und fit_range, leer sind, muss
                 % abgebrochen werden
                 if isempty(fit_range)
+                    Data = evalin('base', 'Data');
+                    Xr = Data.FR_right_border;
+                    Xl = Data.FR_left_border;
+                    FR_relative = Xr-Xl;
                     return
                 end
 

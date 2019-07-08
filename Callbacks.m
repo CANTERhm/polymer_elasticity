@@ -26,14 +26,15 @@ classdef Callbacks
         function data_brush_btn_callback(src, ~)
             % Callback für den Button "Markiere Datenbereich"
             Gui_Elements = evalin('base', 'Gui_Elements');
+            Data = evalin('base', 'Data');
             h = Gui_Elements.data_brush;
             reimport_data_btn = Gui_Elements.reimport_data_btn;
             new_fitrange_btn = Gui_Elements.new_fitrange_btn;
             main_axes = Gui_Elements.main_axes;
 
             try
-                xoffset = Gui_Elements.xoffset;
-                yoffset = Gui_Elements.yoffset;
+                xoffset = Data.xoffset;
+                yoffset = Data.yoffset;
             catch
             end
 
@@ -66,6 +67,9 @@ classdef Callbacks
                     end
             end
             
+            % output
+            Data.borders_from_table = false;
+            assignin('base', 'Data', Data);
         end % data_brush_btn_callback
         
         function reimport_data_btn_callback(~, ~)
@@ -277,6 +281,7 @@ classdef Callbacks
             Data.A_bl_range = A_bl_range;
             Data.orig_line_object = orig_line_object;
             Data.corrected_line = [x y];
+            Data.offsets_from_table = false;
             Data.xoffset = xoffset;
             Data.yoffset = yoffset;
             Data.fit_range_object = fit_range_object;
@@ -320,11 +325,26 @@ classdef Callbacks
                 brushed_x = Data.brushed_data(:,1);
                 brushed_y = Data.brushed_data(:,2);
             elseif isempty(brushed) && isempty(Data.brushed_data)
-                return
+                try
+                    len = length(orig_line);
+                    lb = round(len*Data.FR_left_border/100);
+                    rb = round(len*Data.FR_right_border/100);
+                    brushed_x = orig_line(lb:rb,1);
+                    brushed_y = orig_line(lb:rb,2);
+                    Data.brushed_data = [brushed_x brushed_y];
+                catch
+                    return
+                end
             end
             
             try
-                A_bl_range = Data.A_bl_range;
+                if ~Data.offsets_from_table
+                    A_bl_range = Data.A_bl_range;
+                else
+                    xoff = Data.xoffset.XData(1);
+                    yoff = Data.yoffset.YData(1);
+                    A_bl_range = [xoff yoff];
+                end
                 bl_x = A_bl_range(:,1);
                 bl_y = A_bl_range(:,2);
             catch
@@ -350,8 +370,10 @@ classdef Callbacks
             B_fit_range = [x y];
 
             % Versuche den in FR_relative angegebenen fitbereich umzusetzen
-            if ~isempty(Data.brushed_data)
+            if ~isempty(Data.brushed_data) && ~Data.borders_from_table
                 [Xr, Xl, FR_relative, ~] = UtilityFunctions.CalculateRelativeFitRange([], orig_line(:,1), orig_line(:,2), Data.brushed_data);
+            elseif ~isempty(Data.brushed_data) && Data.borders_from_table
+                [Xr, Xl, FR_relative, ~] = UtilityFunctions.CalculateRelativeFitRange([], orig_line(:,1), orig_line(:,2), []);
             else
                 return
             end
@@ -576,10 +598,6 @@ classdef Callbacks
                     end
             end
             
-            % tigger das Event um alle verbundenen Listenercallbacks
-            % auszuführen
-            Data.parameter.variable_parameter.FireEvent('UpdateObject');
-            
             % output
             assignin('base', 'Data', Data);
         end % UpdateParameterCallback
@@ -606,13 +624,73 @@ classdef Callbacks
                         return
                     end
             end
-            % tigger das Event um alle verbundenen Listenercallbacks
-            % auszuführen
-            Data.parameter.constant_parameter.FireEvent('UpdateObject');
-            
+
             % output
             assignin('base', 'Data', Data);
         end % UpdateConstantParameterCallback
+        
+        function UpdateFitParameterCallback(~, evt)
+            % UPDATEFITPARAMETERCALLBACK Update of Fit Parameter if the
+            % user wants to have numerical input of fit parameter like fit
+            % range, fit borders or offsets
+            
+            % input
+            Data = evalin('base', 'Data');
+            Gui_Elements = evalin('base', 'Gui_Elements');
+            main_axes = Gui_Elements.main_axes;
+            
+            col = evt.Indices(2);
+            switch col
+                case 1 % xoffset
+                    try
+                        delete(Data.xoffset);
+                        
+                    catch
+                    end
+                    try
+                        delete(Data.fit_range_object);
+                    catch
+                    end
+                    hold(main_axes, 'on')
+                    xoffset = vline(str2double(evt.EditData), 'k--');
+                    xoffset.Tag = 'xoffset';
+                    hold(main_axes, 'off');
+                    Data.xoffset = xoffset;
+                    Data.offsets_from_table = true;
+                case 2 % yoffset
+                    try
+                        delete(Data.yoffset);
+                    catch
+                    end
+                    try
+                        delete(Data.fit_range_object);
+                    catch
+                    end
+                    hold(main_axes, 'on')
+                    yoffset = hline(str2double(evt.EditData), 'k--');
+                    yoffset.Tag = 'xoffset';
+                    hold(main_axes, 'off');
+                    Data.yoffset = yoffset;
+                    Data.offsets_from_table = true;
+                case 3 % Xl
+                    try
+                        Data.FR_left_border = str2double(evt.EditData);
+                    catch
+                        return
+                    end
+                    Data.borders_from_table = true;
+                case 4 % Xr
+                    try
+                        Data.FR_right_border = str2double(evt.EditData);
+                    catch
+                        return
+                    end
+                    Data.borders_from_table = true;
+            end
+            
+            % output
+            assignin('base', 'Data', Data);
+        end % UpdateFitParameterCallback
         
     end
     
