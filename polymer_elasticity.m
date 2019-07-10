@@ -68,6 +68,12 @@ end
 
 fig.SizeChangedFcn = @Callbacks.TableResizeCallback;
 
+%% create menu
+load_curves_menu = uimenu('Text', '&Load Force-Curves');
+open_kraftkurven_submenu = uimenu(load_curves_menu);
+open_kraftkurven_submenu.Text = 'Open &Kraftkurven';
+open_kraftkurven_submenu.Accelerator = 'K';
+
 %% erstelle gui
 base = uix.VBox('Parent', fig);
 axes_box = uix.HBox('Parent', base);
