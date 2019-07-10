@@ -191,7 +191,7 @@ classdef Callbacks
 
             assignin('base', 'Gui_Elements', Gui_Elements);
             assignin('base', 'Data', Data);
-        end % ResizeElementsXlim
+        end % ResizeElements
         
     end
     
