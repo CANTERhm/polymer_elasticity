@@ -67,8 +67,9 @@ else
 end
 
 fig.SizeChangedFcn = @Callbacks.TableResizeCallback;
-fig.CloseRequestFcn = @Callbacks.CloseRequestCallback;
-fig.UserData = 'no_closereq';
+
+% avoid closing polymer_elasticity by Kraftkurven
+fig.UserData.EditRequest = false;
 
 %% create menu
 load_curves_menu = uimenu('Text', '&Load Force-Curves');
