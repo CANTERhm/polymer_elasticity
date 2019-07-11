@@ -196,6 +196,8 @@ userguide_panel = uix.BoxPanel('Parent', help_container, 'Title', 'User Guide');
 userguide_container = uix.VBox('Parent', userguide_panel);
 other_panel = uix.BoxPanel('Parent', help_container, 'Title', 'Miscellaneous');
 other_container = uix.VBox('Parent', other_panel);
+terminology_panel = uix.BoxPanel('Parent', help_container, 'Title', 'Terminology');
+terminology_container = uix.VBox('Parent', terminology_panel);
 
 % content general_container
 str = {['The purpose of polymer_elasticity is the evaluation of Clamp-Events ' ...
