@@ -397,14 +397,14 @@ main_axes = axes(axes_box);
 main_axes.Tag = 'main_axes';
 xlabel('vertical tip position / m');
 ylabel('vertical deflection / N')
-grid on
-grid minor
 if ~isempty(x_orig) || ~isempty(y_orig)
     orig_line_object = plot(main_axes, x_orig, y_orig, 'b.',...
         'ButtonDownFcn', @Callbacks.SetStartPoint);
 else
     orig_line_object = [];
 end
+grid on
+grid minor
 
 % add listener for axis-limits
 z = zoom(fig);
