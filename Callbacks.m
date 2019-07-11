@@ -195,6 +195,21 @@ classdef Callbacks
         
     end
     
+    methods (Static) % Menu Callbacks
+        
+        function LoadForceCurves(~, ~)
+            % LOADFORCECURVES to load Force-Curves, the app "Kraftkurven"
+            % will be openend. 
+            
+            current_directory = pwd;
+            cd('C:\Users\Julian\Documents\MATLAB\Projekte\AFM Auswertung\Daten Darstellung');
+            Kraftkurven;
+            cd(current_directory);
+            
+        end % LoadForceCurves
+        
+    end
+    
     methods(Static) % other Callbacks
         
         function SetStartPoint(src, evt)
@@ -408,8 +423,18 @@ classdef Callbacks
             lk_fit = values{1,3};
             
             % plot of the fitrepresentation
+            if isempty(bl_x)
+                xoff = 0;
+            else
+                xoff = mean(bl_x);
+            end
+            if isempty(bl_y)
+                yoff = 0;
+            else
+                yoff = mean(bl_y);
+            end
             max_force = max(abs(orig_line(:,2)));
-            bound = max_force - 1.5e-1*max_force  + mean(bl_y);
+            bound = max_force + 1e-1*max_force + yoff;
             F = linspace(0, bound,1e3); 
             ex_fit = m_FJC(F, [Ks_fit Lc_fit lk_fit], [kb T]);
             
@@ -417,7 +442,7 @@ classdef Callbacks
             hold(main_axes, 'on')
             orig_line_object = plot(main_axes, orig_line(:,1), orig_line(:,2), '.b',...
                 'ButtonDownFcn', @Callbacks.SetStartPoint);
-            fit_line_object = plot(main_axes, ex_fit + mean(bl_x), -F + mean(bl_y), 'r-');
+            fit_line_object = plot(main_axes, ex_fit + xoff, -F + yoff, 'r-');
             fit_range_object = UtilityFunctions.plotFitRange(main_axes,...
                 orig_line, Xl, Xr);
             hold(main_axes, 'off')
@@ -455,7 +480,7 @@ classdef Callbacks
             Data.fit_line_object = fit_line_object;
             Data.fit_line = [fit_line_object.XData' fit_line_object.YData']; 
             Data.fit_range_object = fit_range_object;
-            Data.A_bl_range = A_bl_range
+            Data.A_bl_range = A_bl_range;
             Data.FR_left_border = Xl;
             Data.FR_right_border = Xr;
             assignin('base', 'Data', Data);
@@ -695,6 +720,21 @@ classdef Callbacks
             % output
             assignin('base', 'Data', Data);
         end % UpdateFitParameterCallback
+        
+        function CloseRequestCallback(src, evt)
+            if isa(evt, 'struct')
+                try
+                    event_source = evt.EventSourceName;
+                    if strcmp(event_source, 'Kraftkurven')
+                        return
+                    end
+                catch
+                    delete(src);
+                end
+            else
+                delete(src);
+            end
+        end % CloseRequestCallback
         
     end
     
