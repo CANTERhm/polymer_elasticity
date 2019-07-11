@@ -195,6 +195,21 @@ classdef Callbacks
         
     end
     
+    methods (Static) % Menu Callbacks
+        
+        function LoadForceCurves(~, ~)
+            % LOADFORCECURVES to load Force-Curves, the app "Kraftkurven"
+            % will be openend. 
+            
+            current_directory = pwd;
+            cd('C:\Users\Julian\Documents\MATLAB\Projekte\AFM Auswertung\Daten Darstellung');
+            Kraftkurven;
+            cd(current_directory);
+            
+        end % LoadForceCurves
+        
+    end
+    
     methods(Static) % other Callbacks
         
         function SetStartPoint(src, evt)
@@ -695,6 +710,21 @@ classdef Callbacks
             % output
             assignin('base', 'Data', Data);
         end % UpdateFitParameterCallback
+        
+        function CloseRequestCallback(src, evt)
+            if isa(evt, 'struct')
+                try
+                    event_source = evt.EventSourceName;
+                    if strcmp(event_source, 'Kraftkurven')
+                        return
+                    end
+                catch
+                    delete(src);
+                end
+            else
+                delete(src);
+            end
+        end % CloseRequestCallback
         
     end
     

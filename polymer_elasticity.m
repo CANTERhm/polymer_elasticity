@@ -67,12 +67,15 @@ else
 end
 
 fig.SizeChangedFcn = @Callbacks.TableResizeCallback;
+fig.CloseRequestFcn = @Callbacks.CloseRequestCallback;
+fig.UserData = 'no_closereq';
 
 %% create menu
 load_curves_menu = uimenu('Text', '&Load Force-Curves');
 open_kraftkurven_submenu = uimenu(load_curves_menu);
 open_kraftkurven_submenu.Text = 'Open &Kraftkurven';
 open_kraftkurven_submenu.Accelerator = 'K';
+open_kraftkurven_submenu.MenuSelectedFcn = @Callbacks.LoadForceCurves;
 
 %% erstelle gui
 base = uix.VBox('Parent', fig);
