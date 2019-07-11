@@ -38,8 +38,13 @@ hold_parameter.lk = false;
 
 %% daten einlesen
 
-x_orig = DataSelection(:,1);
-y_orig = DataSelection(:,2);
+if exist('DataSelection', 'var')
+    x_orig = DataSelection(:,1);
+    y_orig = DataSelection(:,2);
+else
+    x_orig = [];
+    y_orig = [];
+end
 fig = findobj('Tag', 'polymer_elasticity');
 Gui_Elements = struct();
 Data = struct();
@@ -390,12 +395,16 @@ slide_panel.TabWidth = 100;
 %% erstelle main_axes für den Fit
 main_axes = axes(axes_box);
 main_axes.Tag = 'main_axes';
-orig_line_object = plot(main_axes, x_orig, y_orig, 'b.',...
-    'ButtonDownFcn', @Callbacks.SetStartPoint);
 xlabel('vertical tip position / m');
 ylabel('vertical deflection / N')
 grid on
 grid minor
+if ~isempty(x_orig) || ~isempty(y_orig)
+    orig_line_object = plot(main_axes, x_orig, y_orig, 'b.',...
+        'ButtonDownFcn', @Callbacks.SetStartPoint);
+else
+    orig_line_object = [];
+end
 
 % add listener for axis-limits
 z = zoom(fig);
