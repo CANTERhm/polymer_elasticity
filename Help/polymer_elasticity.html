@@ -5,20 +5,23 @@
 		<meta charset = "UTF-8">
 		<meta name = "description" content = "This is the documentation and Help for the Programm called <i>Polymer Elasticity</i>">
 		<meta name = "Jules" content = "Jules">
+		<script type="text/javascript" src="http://latex.codecogs.com/latexit.js"></script>
 	</head>
 	<body>
 		<h1> Polymer Elasticity </h1>
 
 		<h2>General</h2>
-		<p> This page will contain a resume for the Programm <i>Polymer Elasticity</i> </p>
+		<p> The polymer-elasticity script can be used to fit the model of the extended, freely jointed chain 
+		to results of force-clamp experiments. The model is as follows  
+		<a href = "single_chain_afm_force_spectroscopy.pdf">[Gianotti 2007]</a>:</p>
+		
+		<p lang = "latex">z(F) = Lc \cdot \left\{ coth\left(\frac{F~l_K}{k_B~T} \right) - \frac{k_B~T}{F~l_K} \right\} \cdot
+		\left( 1 + \frac{F}{K_S~l_K} \right)</p>
 		
 		<h2>Table of Contents</h2>
 		<ul>
-			<li><h3>System Requirements</h3></li>
-				<ul>
-					<li> </li>
-				</ul>
-			<li><h3>User Guide</h3></li>
+			<li><h3><a href = "system_requirements.html">System Requirements</a></h3></li>
+			<li><h3><a href = "user_guide.html">User Guide</a></h3></li>
 				<ul>
 					<li>Start the Programm</li>
 					<li>Load Force-Curves from Text-files</li>
@@ -26,15 +29,14 @@
 					<li>Fit the Model to the loaded Dataset</li>
 					<li>Adjusting the Fitparameters</li>
 				</ul>
-			<li><h3>Miscellaneous</h3></li>
+			<li><h3><a href = "miscellaneous.html">Miscellaneous</a></h3></li>
 				<ul>
 					<li>Load new Data</li>
 					<li>Delete the Fitrange</li>
 					<li>Save Figure Elements</li>
 				</ul>
+			<li><h3><a href = "terminology.html">Terminology</a></h3></li>
 		</ul>
-		
-		<h2>Terminology</h2>
 		
 	</body>
 </html>
