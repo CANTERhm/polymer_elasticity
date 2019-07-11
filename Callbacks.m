@@ -207,6 +207,10 @@ classdef Callbacks
             cd(current_directory);
             
         end % LoadForceCurves
+        function OpenHelpCallback(~, ~)
+            web('Help\polymer_elasticity.html',...
+                '-browser');
+        end % OpenHelpCallback
         
     end
     

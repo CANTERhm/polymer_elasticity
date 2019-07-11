@@ -73,10 +73,18 @@ fig.UserData.EditRequest = false;
 
 %% create menu
 polymer_elasticity_menu = uimenu('Text', '&Polymer Elasticity');
+
+% open Kraftkurven
 open_kraftkurven_submenu = uimenu(polymer_elasticity_menu);
 open_kraftkurven_submenu.Text = 'Open &Kraftkurven';
 open_kraftkurven_submenu.Accelerator = 'K';
 open_kraftkurven_submenu.MenuSelectedFcn = @Callbacks.LoadForceCurves;
+
+% help
+help_submenu = uimenu(polymer_elasticity_menu);
+help_submenu.Text = '&Help';
+help_submenu.Separator = 'on';
+help_submenu.MenuSelectedFcn = @Callbacks.OpenHelpCallback;
 
 %% erstelle gui
 base = uix.VBox('Parent', fig);
