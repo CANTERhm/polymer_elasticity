@@ -1,16 +1,11 @@
 %% poymere_elasticity
-% Es muss die Variable "DataSelection" im Workspace vorhanden sein, bevor
-% das Skirpt gestartet wird. "DataSelection" kann am einfachsten über die
-% App "Kraftkurven" erstellt werden.
-% DataSeletion: nx2 Vektor mit x, y koordinaten von Datenpunkten 
-%   - DataSelection(:,1): x-koordinaten
-%   - DataSelection(:,2): y-koordinaten
-%
-% Für eine Detailierte Anleitung siehe den Hilfe Tab im Slide-Menü von
-% polymere_elasticity
-% clearvars -except ForceCurves DataSelection savepath
-%
-% siehe auch: Hilfe.docx oder Hilfe.pdf
+% POLYMER_ELASTICITY This Program fits the freely jointed chain Model to a
+% Dataset aquired from Force-Clamp-Events.
+%   
+%   For more inoformation see
+%       - help entry in the "Polymer Elasticity" menu of polymer_elasticity
+%       - Help.docx in polymer_elasticity/Help
+
 
 %% erstelle parameter
 vary_parameter = Results();

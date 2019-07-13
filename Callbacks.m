@@ -202,7 +202,7 @@ classdef Callbacks
             % will be openend. 
             
             current_directory = pwd;
-            cd('C:\Users\Julian\Documents\MATLAB\Projekte\AFM Auswertung\Daten Darstellung');
+            cd('Kraftkurven');
             Kraftkurven;
             cd(current_directory);
             
