@@ -181,11 +181,12 @@ slide_btn = uicontrol('Parent', slide_panel_container, 'Style', 'togglebutton',.
 dialog_container = uix.VBox('Parent', slide_panel);
 vary_parameter_panel = uix.BoxPanel('Parent', dialog_container,...
     'Title', 'Variable Parameters');
-button_container = uix.HButtonBox('Parent', dialog_container);
+% button_container = uix.HButtonBox('Parent', dialog_container);
 vary_parameter_container = uix.VBox('Parent', vary_parameter_panel);
 constant_parameter_panel = uix.BoxPanel('Parent', dialog_container,...
     'Title', 'Constant Parameters');
 constant_parameter_container = uix.VBox('Parent', constant_parameter_panel);
+button_container = uix.HButtonBox('Parent', dialog_container);
 
 % content of vary_parameter_container
 
@@ -221,7 +222,7 @@ do_fit_btn = uicontrol('Parent', button_container, 'Style', 'pushbutton',...
     'Callback', @Callbacks.DoFit);
 
 % configure the dialog_container
-dialog_container.Heights = [-1 25 -1];
+dialog_container.Heights = [-1 -1 25];
 
 %% slide-panel: cost function tab
 cf_container = uix.VBox('Parent', slide_panel);
@@ -239,8 +240,8 @@ cost_function_data = {'Ks', vary_parameter.cf_Ks, 'N/m', hold_parameter.cf_Ks;..
 cf_parameter_table = uitable(cf_parameter_container);
 cf_parameter_table.RowName = {};
 cf_parameter_table.ColumnName = {'Parameter', 'Value', 'Unit', 'hold?'};
+cf_parameter_table.Data = cost_function_data;
 cf_parameter_table.ColumnEditable = [false true false true];
-cf_paremeter_table.Data = cost_function_data;
 
 % plot number edit field
 cf_edit_field_container.HorizontalAlignment = 'right';
