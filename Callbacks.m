@@ -136,6 +136,9 @@ classdef Callbacks
             assignin('base', 'Data', Data);
         end % reimport_data_btn_callback
         
+        function calculate_costfunction_btn_callback(~,~)
+        end % calculate_costfunction_btn_callback
+        
     end
     
     methods(Static) % Resize Callbacks
@@ -755,6 +758,23 @@ classdef Callbacks
                 delete(src);
             end
         end % CloseRequestCallback
+        
+        function EditPlotNumberCallback(src, ~)
+            % input
+            Data = evalin('base', 'Data');
+            
+            % new value assignment
+            old_value = num2str(Data.cf_plotnumber);
+            new_value = str2double(src.String);
+            if ~isnan(new_value)
+                Data.cf_plotnumber = new_value;
+            else
+                src.String = old_value;
+            end
+            
+            % output
+            assignin('base', 'Data', Data);
+        end % EditPlotNumberCallback
         
     end
     

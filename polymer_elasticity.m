@@ -22,7 +22,7 @@
 % You should have received a copy of the GNU General Public License
 % along with polymer_elasticity.  If not, see <http://www.gnu.org/licenses/>.
 
-%% erstelle parameter
+%% create parameter
 vary_parameter = Results();
 constant_parameter = Results();
 hold_parameter = Results();
@@ -33,6 +33,12 @@ vary_parameter.addproperty('lk');
 vary_parameter.Ks = 28;
 vary_parameter.Lc = 0.5e-6;
 vary_parameter.lk = 5.4e-10;
+vary_parameter.addproperty('cf_Ks');
+vary_parameter.addproperty('cf_Lc');
+vary_parameter.addproperty('cf_lk');
+vary_parameter.cf_Ks = 28;
+vary_parameter.cf_Lc = 0.5e-6;
+vary_parameter.cf_lk = 5.4e-10;
 
 constant_parameter.addproperty('T');
 constant_parameter.addproperty('kb');
@@ -45,6 +51,13 @@ hold_parameter.addproperty('lk');
 hold_parameter.Ks = true;
 hold_parameter.Lc = true;
 hold_parameter.lk = false;
+hold_parameter.addproperty('cf_Ks');
+hold_parameter.addproperty('cf_Lc');
+hold_parameter.addproperty('cf_lk');
+hold_parameter.cf_Ks = false;
+hold_parameter.cf_Lc = true;
+hold_parameter.cf_lk = false;
+
 
 %% read data
 
@@ -202,12 +215,54 @@ constant_parameter_table.CellEditCallback = @Callbacks.UpdateConstantParameterCa
 % configure the DoFit button
 button_container.HorizontalAlignment = 'right';
 button_container.VerticalAlignment = 'middle';
+button_container.ButtonSize = [150, 20];
 do_fit_btn = uicontrol('Parent', button_container, 'Style', 'pushbutton',...
     'String', 'Do Fit',...
     'Callback', @Callbacks.DoFit);
 
 % configure the dialog_container
-dialog_container.Heights = [-1 20 -1];
+dialog_container.Heights = [-1 25 -1];
+
+%% slide-panel: cost function tab
+cf_container = uix.VBox('Parent', slide_panel);
+cf_panel = uix.BoxPanel('Parent', cf_container, 'Title', 'Cost Function Parameter');
+cf_parameter_container = uix.VBox('Parent',cf_panel);
+cf_edit_field_container = uix.HButtonBox('Parent', cf_container);
+cf_button_container = uix.HButtonBox('Parent', cf_container);
+
+% content of cost function parameter table
+
+cost_function_data = {'Ks', vary_parameter.cf_Ks, 'N/m', hold_parameter.cf_Ks;...
+    'Lc', vary_parameter.cf_Lc, 'm', hold_parameter.cf_Lc;...
+    'lk', vary_parameter.cf_lk, 'm', hold_parameter.cf_lk};
+
+cf_parameter_table = uitable(cf_parameter_container);
+cf_parameter_table.RowName = {};
+cf_parameter_table.ColumnName = {'Parameter', 'Value', 'Unit', 'hold?'};
+cf_parameter_table.ColumnEditable = [false true false true];
+cf_paremeter_table.Data = cost_function_data;
+
+% plot number edit field
+cf_edit_field_container.HorizontalAlignment = 'right';
+cf_edit_field_container.VerticalAlignment = 'middle';
+cf_edit_field_container.ButtonSize = [150 20];
+
+cf_plotnumber_text = uicontrol('Parent', cf_edit_field_container, 'Style', 'text',...
+    'String', 'Plot Number:');
+cf_plotnumber_edit = uicontrol('Parent', cf_edit_field_container, 'Style', 'edit',...
+    'String', '1',...
+    'Callback', @Callbacks.EditPlotNumberCallback);
+
+% configuration of calculata cost function button
+cf_button_container.HorizontalAlignment = 'right';
+cf_button_container.VerticalAlignment = 'middle';
+cf_button_container.ButtonSize = [150 20];
+calc_cost_func_btn = uicontrol('Parent', cf_button_container, 'Style', 'pushbutton',...
+    'String', 'Calculate Cost Function',...
+    'Callback', @Callbacks.calculate_costfunction_btn_callback);
+
+% configuration of cf_container
+cf_container.Heights = [-1 25 25];
 
 %% settings of slide-panel
 extended_width = 400;
@@ -215,7 +270,7 @@ shrinked_width = 20;
 
 axes_box.Widths(1) = shrinked_width;
 slide_panel_container.Widths = [-1 20];
-slide_panel.TabTitles = {'Modellparameter'};
+slide_panel.TabTitles = {'Model', 'Const Function'};
 slide_panel.TabWidth = 100;
 
 %% create main_axes 
@@ -272,6 +327,10 @@ Gui_Elements.slide_panel = slide_panel;
 Gui_Elements.slide_btn = slide_btn;
 Gui_Elements.slide_panel_vary_parameter_table = vary_parameter_table;
 Gui_Elements.slide_panel_constant_parameter_table = constant_parameter_table;
+Gui_Elements.slide_panel_do_fit_btn = do_fit_btn;
+Gui_Elements.slide_panel_cf_parameter_table = cf_parameter_table;
+Gui_Elements.slide_panel_cf_plotnumber_edit = cf_plotnumber_edit;
+Gui_Elements.slide_panel_cf_calc_cost_func_btn = calc_cost_func_btn;
 Gui_Elements.slide_panel_extended_width = extended_width;
 Gui_Elements.slide_panel_shrinked_width = shrinked_width;
 
@@ -289,6 +348,7 @@ Data.brushed_data = [];
 Data.borders_from_table = false;
 Data.FR_left_border = [];
 Data.FR_right_border = [];
+Data.cf_plotnumber = 1;
 Data.parameter.variable_parameter = vary_parameter;
 Data.parameter.constant_parameter = constant_parameter;
 Data.parameter.hold_parameter = hold_parameter;
