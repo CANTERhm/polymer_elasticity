@@ -14,13 +14,13 @@
 		</style>
 	</head>
 	<body>
-		<h1> Polymer Elasticity v 2.1.0 </h1>
+		<h1> Polymer Elasticity v2.2.0 </h1>
 		
 
 		<h2>General</h2>
 			<p> 
-				The polymer-elasticity script can be used to fit the model of the extended, freely jointed chain 
-				to results of force-clamp experiments. The model is as follows  
+				The <i>polymer_elasticity</i> script can be used to fit the Model of the extended, freely jointed Chain 
+				to Results of Force-Clamp Experiments. The Model is as follows  
 				<a href = "single_chain_afm_force_spectroscopy.pdf">[Gianotti 2007]</a>:
 			</p>
 			
@@ -30,8 +30,8 @@
 			</p>
 			
 			<p>
-				Where $z(F)$ represents the force-dependent expansion of the measured molecule and $F$ represents the force applied in z-direction to the melecule. 
-				The free parameters of the model are:
+				Where $z(F)$ represents the force-dependent Expansion of the measured Molecule and $F$ represents the Force applied in z-Direction to the Molecule. 
+				The free Parameters of the Model are:
 			</p>
 			
 			<ul>
@@ -41,8 +41,8 @@
 			</ul>
 			
 			<p>
-				The constant Parameters are the Boltzmann constant $k_B$ as well as the absolut Temperature $T$. This Model is fitted to the plotted inverse function
-				(distance vs. force) within the data range selected in <i>polymer_elasticity</i>.
+				The Constant Parameters are the Boltzmann Constant $k_B$ as well as the absolut Temperature $T$. This Model is fitted to the plotted inverse Function
+				(Distance vs. Force) within the Data Range selected in <i>polymer_elasticity</i>.
 			</p>
 		
 		<h2>Outline</h2>
@@ -51,21 +51,24 @@
 				<li><h3><a href = "#user_guide">User Guide</a></h3></li>
 					<ul>
 						<li><a href = "#start_program">Start of the Program</a></li>
-						<li><a href = "#load_curves">Load Force-Curves from Text-files</a></li>
+						<li><a href = "#load_curves">Load Force-Curves from Text-Files</a></li>
 						<li><a href = "#create_dataselection">Create the Variable <i>DataSelection</i></a></li>
 						<li><a href = "#fit_model">Fit the Model to the loaded Dataset</a></li>
-						<li><a href = "#adjust_parameter">Adjusting the Fitparameters</a></li>
+						<li><a href = "#adjust_parameter">Adjust the Fit Parameters</a></li>
 					</ul>
 				<li><h3><a href = "#miscellaneous">Miscellaneous</a></h3></li>
 					<ul>
 						<li><a href = "#load_data">Load new Data</a></li>
-						<li><a href = "#delete_fitrange">Delete the Fitrange</a></li>
+						<li><a href = "#delete_fitrange">Delete the Fit Range</a></li>
 						<li><a href = "#save_figure">Save Figure Elements</a></li>
 					</ul>
 				<li><h3><a href = "#terminology">Terminology</a></h3></li>
 			</ul>
 			
 		<h2>Changelog</h2>
+			<ul>
+				<li>The Help is now located unter the Menu Point <i>Polymer Elasticity</i> as a Browser Version</li>
+			</ul>
 		
 		<h2><a href = "#top" id = "system_requirements">System Requirements</a><h2>
 			<h3>Necessary Programs</h3>
@@ -93,57 +96,57 @@
 			
 			<ul>
 				<li>The <i>Utility Function Labrary</i> must persist on the MATLAB path</li>
-				<li>A Python interpreter must have been determined in MATLAB (see MATLAB doc for <code>pyversion</code>)</li>
-				<li>MATLABs current folder is the folder where all the files for <i>polymer_elasticity</i> are located (normally: .../polymer_elasticity)</li>
+				<li>A Python Interpreter must have been determined in MATLAB (see MATLAB doc for <code>pyversion</code>)</li>
+				<li>MATLABs current Folder is the Folder where all the Files for <i>polymer_elasticity</i> are located (normally: .../polymer_elasticity)</li>
 			</ul>
 			
 			<p>
 				For <i>polymer_elasticity</i> the key Variable is <code>DataSelection</code>. Basically <code>DataSelection</code> can be created in various ways. 
 				The easiest way maybe slicing through an nx2 MATLAB-Vector representing any Graph with x and y coordinates. However, if someone doesn´t want to wirte
-				his own piece of code for importing force-curves from a file, the common way to produce <code>DataSelection</code> would be through the programm <i>Kraftkurven</i>.
+				his own piece of code for importing Force-Curves from a File, the common way to produce <code>DataSelection</code> would be through the Program <i>Kraftkurven</i>.
 			</p>
 		
 			<h3> <a href = "#top" id = "start_program">Start of the Program</a></h3>
 				<p>
-					To start the script <i>polymer_elasticity</i>, there are two ways:
+					To start the Script <i>polymer_elasticity</i>, there are two ways:
 				</p>
 				<ul>
-					<li>Type <i>polymer_elasticity</i> in the MATLAB-Commandwindow</li>
+					<li>Type <i>polymer_elasticity</i> in the MATLAB-Command Window</li>
 					<li>Open the Script <i>polymer_elasticity</i> in the MATLAB-Editor and Click "Run" or press "F5"</li>
 				</ul>
 				<p>
-					What follows is the opening of a Figue called "Polymer Elasticity" and the creation of an empty Axes together with several Gui-Elements
+					What follows is the Opening of a Figure called "Polymer Elasticity" and the Creation of an empty Axes together with several Gui-Elements
 					(for more Details about the Gui-Elements, see the Section <a href = "#miscellaneous">Miscellaneous</a>).
 				</p>
 				
-			<h3><a href = "#top" id = "load_curves">Load Force-Curves from Text-files</a></h3>
+			<h3><a href = "#top" id = "load_curves">Load Force-Curves from Text-Files</a></h3>
 				<p>
-					To import Force-Curves from Text, the MATLAB-App <i>Kraftkurven</i> is utilized. To open this App, go to the menupoint "Polymer Elasticity" in the Figures menuband and 
-					Click on "open Kraftkurven". Next, hit the "Load"-Button und choose a folder where appropriate Text-files are located. Make sure, that the Text-files meet the following 
-					points:
+					To import Force-Curves from Text-Files, the MATLAB-App <i>Kraftkurven</i> gets utilized. To open this App, go to the Menu Point "Polymer Elasticity" in the Figures Menu Band and 
+					Click on "Open Kraftkurven". Next, hit the "Load"-Button and choose a folder where appropriate Text-Files are located. Make sure, that the Text-Files meet the following 
+					Points:
 				</p>
 				<ul>
-					<li>The Text-files are Exported from the "JPK Data Processing"-Sorftware (version 5 or later) from Bruker (formally known as JPK Instruments AG)</li>
-					<li>Export the Text-files with full header settings</li>
+					<li>The Text-Files are Exported from the "JPK Data Processing"-Software (version 5 or later) from Bruker (formally known as JPK Instruments AG)</li>
+					<li>Export the Text-Files with full header settings</li>
 				</ul>
 				<p>
-					For Force-Clamp-Experiments it might be advantageous tho choose the option "retrace" in the "Curve Segments to Plot"-Dorpdown menu. This option shows only the part
-					with the Clamp-Event of the exported Force-Curves. To use the <i>freely jointed chain</i> Model, the default Values in the Dropdown menus for x- and y-channels should
-					ramain untouched.
+					For Force-Clamp-Experiments it might be advantageous to choose the option "retrace" in the "Curve Segments to Plot"-Dropdown Menu. This Option shows only the part
+					with the Clamp-Event of the exported Force-Curves. To use the <i>freely jointed chain</i> Model, the default Values in the Dropdown Menus for x- and y-channels should
+					remain untouched.
 				</p>
 			
 			<h3><a href = "#top" id = "create_dataselection">Create the Variable <code>DataSelection</code></a></h3>
 				<p>
-				If the Force-Curves loaded properly, MATLABs Plottools together with a Figure, showing all Force-Curves loacated in the chosen folder, would open. In order to created
+				If the Force-Curves loaded properly, MATLABs Plot Tools together with a Figure, showing all Force-Curves loacated in the chosen Folder, would open. In order to created
 				<code>DataSelection</code>, follow the next Steps:
 				</p>
 				<ol>
 					<li>Right-click on <b>any</b> of the staggered Graphs and choose "Graphen Staffeln" (in the "Offset"-Dialog just hit "Ok")</li>
-					<li>Right-clikc on a <b>certain</b> Graph, which should be evaluated and hit the menupoint "Öffne Graph in neuer Abbildung"</li>
+					<li>Right-click on a <b>certain</b> Graph, which should be evaluated and hit the Menu Point "Öffne Graph in neuer Abbildung"</li>
 					<li>In the new Figure disable all Figure Tools</li>
 					<li>Right-click on the white space around the Graph</li>
-					<li>Choose a specific selection type and mark the Region on the Graph which is related to the Extension of a Polymer</li>
-					<li>Right-click on the selected Datarange and hit "To Workspace" to create <code>DataSelection</code> in MATLABs base Workspace</li>
+					<li>Choose a specific Selection Type and mark the Region on the Graph which is related to the Extension of a Polymer</li>
+					<li>Right-click on the selected Data Range and hit "To Workspace" to create <code>DataSelection</code> in MATLABs base Workspace</li>
 				</ol>
 				<p>
 					In the Base-Workspace of MATLAB the following Variables should now exist:
@@ -156,42 +159,42 @@
 					<dt><b>ForceCurves</b></dt>
 						<dd>- Stucture with all loaded Force-Curves from <i>Kraftkurven</i></dd>
 					<dt><b>DataSelection</b></dt>
-						<dd>- nx2 MATLAB-Vektor describing the Region of Interest of a Force-Curve, created via <i>Kraftkurven</i></dd>
+						<dd>- nx2 MATLAB-Vector describing the Region of Interest of a Force-Curve, created via <i>Kraftkurven</i></dd>
 				</dl>
 			
 			<h3><a href = "#top" id = "fit_model">Fit the Model to the loaded Dataset</a></h3>
 				<ol>
 					<li>Hit the Button "Reimport DataSelection" to show <code>DataSelection</code> in <i>polymer_elasticity</i></li>
-					<li>Choose an appropriate Starting Point for the Clamp-Event either by Left-clicking on a point on the Graph or by entering a Value in the xoffset/ yoffset cells 
-					in the table (where it sys "NaN" at the beginning)</li>
-					<li>Chose an appropriate fitrange for the Model. This can be done either by hitting the Button "New Fitrange" and dragging an Region of Interst or by
+					<li>Choose an appropriate Starting Point for the Clamp-Event either by Left-clicking on a Point on the Graph or by entering a Value in the xoffset/ yoffset cells 
+					in the Table (where it sys "NaN" at the beginning)</li>
+					<li>Chose an appropriate Fit Range for the Model. This can be done either by hitting the Button "New Fit Range" and dragging an Region of Interest or by
 					entering Values for the Cells "Xl" and "Xr" (Where it says "NaN" at the beginning)</li>
 					<li>If the Fit doesn´t start automatically, hit the Button "DoFit" on the Slide-Panel (">>"-Button)</li>
 				</ol>
 			
-			<h3><a href = "#top" id = "adjust_parameter">Adjusting the Fitparameters</a></h3>
+			<h3><a href = "#top" id = "adjust_parameter">Adjusting the Fit Parameters</a></h3>
 				<p>
-					If the Default-Values for the fit were inappropriate, the Parameters for the Fit would be adapted in the slide-panel. The Slide-Panel is at the beginning hidden behind the 
-					Button ">>". Initial Values for the Fit can be adjusted by entering new Start Values for variable and constant Parameter directly to the "Value"-Columns of the Variabel- and 
-					Constant-Parameter Tables. Additionally, variable Parameter can be fixed at a certain Value by checking the Box "hold" for the correspondend Parameter. This specific Parameter remains untouched 
-					during the Fit. By default the variable Parameters $K_S$ and $L_C$ are fixed at the initial Values, $l_K$ remains free (constant Parameters are fixed per definition and can´t 
-					changed to variable ones). If Values where entered into the tables (this is valid for all tables) the Fit must be reevaluated by pressing the "DoFit"-Button.
+					If the Default-Values for the Fit were inappropriate, the Parameters for the Fit would be adapted in the slide-panel. The Slide-Panel is, at the beginning, hidden behind the 
+					Button ">>". Initial Values for the Fit can be adjusted by entering new Start Values for variable and constant Parameter directly to the "Value"-Columns of the Variable- and 
+					Constant-Parameter Tables. Additionally, variable Parameter can be fixed at a certain Value by checking the Box "hold" for the corresponding Parameter. This specific Parameter remains untouched 
+					during the Fit. By default, the variable Parameters $K_S$ and $L_C$ are fixed at the initial Values, $l_K$ remains free (constant Parameters are fixed per definition and can´t 
+					be changed to variable ones). If Values were entered to the Tables (this is valid for all tables), the Fit must be reevaluated by pressing the "DoFit"-Button.
 				</p>
 			
 		<h2><a href = "#top" id = "miscellaneous">Miscellaneous</a><h2>
 			<h3><a href = "#top" id = "load_data">Load new Data</a></h3>
 				<p>
 					If the Data in the Variable <code>DataSelection</code> changes, it´s necessary to reimport the Data to <i>polymer_elasticity</i>, by pressing the Button called
-					"Reimport DataSelection". Thereafter the new Graph will apear in the Figure. All Offsets, Fitranges and Fitrepresentations will be deleted.
+					"Reimport DataSelection". Thereafter the new Graph will appear in the Figure. All Offsets, Fit Ranges and Fit Representations will be deleted.
 				</p>
-			<h3><a href = "#top" id = "delete_fitrange">Delete the Fitrange</a></h3>
+			<h3><a href = "#top" id = "delete_fitrange">Delete the Fit Range</a></h3>
 				<p>
-					To delete the actual fitrange press the Button "Delete Fitrange". This will only delete the Fitrange and the Fitrepresentation. All Offsets remain unchanged.
+					To delete the actual Fit Range, press the Button "Delete Fit Range". This will only delete the Fit Range and the Fit Representation. All Offsets remain unchanged.
 				</p>
 			<h3><a href = "#top" id = "save_figure">Save Figure Elements</a></h3>
 				<p>
-					To get a "good looking" version of the Elements in the Figure, right-click on the white Background of the Figure. in the Contextmenu choose "Save Figure" and 
-					MATLABs Plottools will open.
+					To get a "good looking" Version of the Elements in the Figure, right-click on the white Background of the Figure. in the Context Menu choose "Save Figure" and 
+					MATLABs Plot Tools will open.
 				</p>
 			
 		<h2><a href = "#top" id = "terminology">Terminology</a></h2>
@@ -199,18 +202,17 @@
 				<dt><b>Ks Fit</b></dt>
 					<dd>- Means the fitted Segment Elasticity of the investigated Molecule</dd>
 				<dt><b>Lc Fit</b></dt>
-					<dd>- Means the fitted Contourlength of the investigated Molecule</dd>
+					<dd>- Means the fitted Contour Length of the investigated Molecule</dd>
 				<dt><b>lk Fit</b></dt>
-					<dd>- Means the fitted Kuhnlength of the investigated Molecule</dd>
+					<dd>- Means the fitted Kuhn Length of the investigated Molecule</dd>
 				<dt><b>Clamp Length</b></dt>
-					<dd>- "Lc Fit" + x-offset; means the Position of the Clamp Event in the Coordinate System</dd>
+					<dd>- "Lc Fit" + x-Offset; means the Position of the Clamp-Event in the Coordinate System</dd>
 				<dt><b>Xl</b></dt>
-					<dd>- Left Border of the Fitrange in %</dd>
+					<dd>- Left Border of the Fit Range in %</dd>
 				<dt><b>Xr</b></dt>
-					<dd>- Right Border of the Fitrange in %</dd>
+					<dd>- Right Border of the Fit Range in %</dd>
 				<dt><b>Distance</b></dt>
 					<dd>- Distance between Xl and Xr in %</dd>
 			</dl>
-		
 	</body>
 </html>

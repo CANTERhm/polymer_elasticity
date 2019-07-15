@@ -1,16 +1,26 @@
 %% poymere_elasticity
-% Es muss die Variable "DataSelection" im Workspace vorhanden sein, bevor
-% das Skirpt gestartet wird. "DataSelection" kann am einfachsten über die
-% App "Kraftkurven" erstellt werden.
-% DataSeletion: nx2 Vektor mit x, y koordinaten von Datenpunkten 
-%   - DataSelection(:,1): x-koordinaten
-%   - DataSelection(:,2): y-koordinaten
+% POLYMER_ELASTICITY This Program fits the freely jointed chain Model to a
+% Dataset aquired from Force-Clamp-Events.
+%   
+%   For more inoformation see
+%       - help entry in the "Polymer Elasticity" menu of polymer_elasticity
+%       - Help.docx in polymer_elasticity/Help
 %
-% Für eine Detailierte Anleitung siehe den Hilfe Tab im Slide-Menü von
-% polymere_elasticity
-% clearvars -except ForceCurves DataSelection savepath
-%
-% siehe auch: Hilfe.docx oder Hilfe.pdf
+% Copryright 2019 Julian Blaser
+% This file is part of polymer_elasticity.
+% 
+% polymer_elasticity is free software: you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation, either version 3 of the License, or
+% (at your option) any later version.
+% 
+% polymer_elasticity is distributed in the hope that it will be useful,
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+% GNU General Public License for more details.
+% 
+% You should have received a copy of the GNU General Public License
+% along with polymer_elasticity.  If not, see <http://www.gnu.org/licenses/>.
 
 %% erstelle parameter
 vary_parameter = Results();
@@ -36,7 +46,7 @@ hold_parameter.Ks = true;
 hold_parameter.Lc = true;
 hold_parameter.lk = false;
 
-%% daten einlesen
+%% read data
 
 if exist('DataSelection', 'var')
     x_orig = DataSelection(:,1);
@@ -91,7 +101,7 @@ help_submenu.Text = '&Help';
 help_submenu.Separator = 'on';
 help_submenu.MenuSelectedFcn = @Callbacks.OpenHelpCallback;
 
-%% erstelle gui
+%% create gui
 base = uix.VBox('Parent', fig);
 axes_box = uix.HBox('Parent', base);
 control_box = uix.VBox('Parent', base);
@@ -109,7 +119,7 @@ new_fitrange_btn = uicontrol(btn_box, 'Style', 'pushbutton',...
     'String', 'Delete Fitrange',...
     'Callback', @Callbacks.new_fitrange_btn_callback);
 
-%% gui einstellungen
+%% gui settings
 base.Heights = [-3.5 -1];
 base.Padding = 5;
 control_box.Heights = [20 -1 -1];
@@ -208,7 +218,7 @@ slide_panel_container.Widths = [-1 20];
 slide_panel.TabTitles = {'Modellparameter'};
 slide_panel.TabWidth = 100;
 
-%% erstelle main_axes für den Fit
+%% create main_axes 
 main_axes = axes(axes_box);
 main_axes.Tag = 'main_axes';
 xlabel('vertical tip position / m');
@@ -236,12 +246,12 @@ cm = uicontextmenu;
 main_axes.UIContextMenu = cm;
 uimenu(cm, 'Label', 'Save Figure', 'Callback', @Callbacks.SaveFigure);
 
-%% erstelle data brush-object
+%% create data brush-object
 h = brush(fig);
 h.Enable = 'off';
 h.ActionPostCallback = @Callbacks.DoFit;
 
-%% erstelle Gui_Elements 
+%% create Gui_Elements 
 Gui_Elements.fig = fig;
 Gui_Elements.main_axes = main_axes;
 
@@ -265,7 +275,7 @@ Gui_Elements.slide_panel_constant_parameter_table = constant_parameter_table;
 Gui_Elements.slide_panel_extended_width = extended_width;
 Gui_Elements.slide_panel_shrinked_width = shrinked_width;
 
-%% erstelle Data 
+%% create Data 
 Data.A_bl_range = [];
 Data.orig_line_object = orig_line_object;
 Data.orig_line = [x_orig y_orig];
@@ -283,5 +293,5 @@ Data.parameter.variable_parameter = vary_parameter;
 Data.parameter.constant_parameter = constant_parameter;
 Data.parameter.hold_parameter = hold_parameter;
 
-%% löschen unnötiger Variablen
+%% delete unnecessary variables
 clearvars -except ForceCurves DataSelection savepath Data Gui_Elements
