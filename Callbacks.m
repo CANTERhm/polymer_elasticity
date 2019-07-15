@@ -1,5 +1,21 @@
 classdef Callbacks
     %CALLBACKS summary of all used callbacks in polymer_elasticity
+    %
+    % Copryright 2019 Julian Blaser
+    % This file is part of polymer_elasticity.
+    % 
+    % polymer_elasticity is free software: you can redistribute it and/or modify
+    % it under the terms of the GNU General Public License as published by
+    % the Free Software Foundation, either version 3 of the License, or
+    % (at your option) any later version.
+    % 
+    % polymer_elasticity is distributed in the hope that it will be useful,
+    % but WITHOUT ANY WARRANTY; without even the implied warranty of
+    % MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    % GNU General Public License for more details.
+    % 
+    % You should have received a copy of the GNU General Public License
+    % along with polymer_elasticity.  If not, see <http://www.gnu.org/licenses/>.
     
     methods(Static) % Button Callbacks
         
@@ -26,14 +42,15 @@ classdef Callbacks
         function data_brush_btn_callback(src, ~)
             % Callback für den Button "Markiere Datenbereich"
             Gui_Elements = evalin('base', 'Gui_Elements');
+            Data = evalin('base', 'Data');
             h = Gui_Elements.data_brush;
             reimport_data_btn = Gui_Elements.reimport_data_btn;
             new_fitrange_btn = Gui_Elements.new_fitrange_btn;
             main_axes = Gui_Elements.main_axes;
 
             try
-                xoffset = Gui_Elements.xoffset;
-                yoffset = Gui_Elements.yoffset;
+                xoffset = Data.xoffset;
+                yoffset = Data.yoffset;
             catch
             end
 
@@ -66,6 +83,9 @@ classdef Callbacks
                     end
             end
             
+            % output
+            Data.borders_from_table = false;
+            assignin('base', 'Data', Data);
         end % data_brush_btn_callback
         
         function reimport_data_btn_callback(~, ~)
@@ -123,15 +143,19 @@ classdef Callbacks
         function TableResizeCallback(~, ~)
             % resize callback für die Tabelle der Fitergebnisse
             
-            Gui_Elements = evalin('base', 'Gui_Elements');
-            table = Gui_Elements.results_table;
-            table_width = table.Position(3);
-
-            % berechne die neue spaltenbreite
-            new_col_width = floor(table_width/length(table.ColumnName));
-
-            % passe spaltenbreite an
-            table.ColumnWidth = {new_col_width};
+%             Gui_Elements = evalin('base', 'Gui_Elements');
+%             table = Gui_Elements.results_table;
+%             table_2 = Gui_Elements.results_table_2;
+%             table_width = table.Position(3);
+%             table_width_2 = table_2.Position(3);
+% 
+%             % berechne die neue spaltenbreite
+%             new_col_width = floor(table_width/length(table.ColumnName));
+%             new_col_width_2 = floor(table_width_2/length(table_2.ColumnName));
+% 
+%             % passe spaltenbreite an
+%             table.ColumnWidth = {new_col_width};
+%             table_2.ColumnWidth = {new_col_width_2};
         end % TableResizeCallback
         
         function SlidePanelResizeCallback(src, ~)
@@ -183,7 +207,26 @@ classdef Callbacks
 
             assignin('base', 'Gui_Elements', Gui_Elements);
             assignin('base', 'Data', Data);
-        end % ResizeElementsXlim
+        end % ResizeElements
+        
+    end
+    
+    methods (Static) % Menu Callbacks
+        
+        function LoadForceCurves(~, ~)
+            % LOADFORCECURVES to load Force-Curves, the app "Kraftkurven"
+            % will be openend. 
+            
+            current_directory = pwd;
+            cd('Kraftkurven');
+            Kraftkurven;
+            cd(current_directory);
+            
+        end % LoadForceCurves
+        function OpenHelpCallback(~, ~)
+            web('Help\polymer_elasticity.html',...
+                '-browser');
+        end % OpenHelpCallback
         
     end
     
@@ -273,6 +316,7 @@ classdef Callbacks
             Data.A_bl_range = A_bl_range;
             Data.orig_line_object = orig_line_object;
             Data.corrected_line = [x y];
+            Data.offsets_from_table = false;
             Data.xoffset = xoffset;
             Data.yoffset = yoffset;
             Data.fit_range_object = fit_range_object;
@@ -287,6 +331,7 @@ classdef Callbacks
             Data = evalin('base', 'Data');
 
             results_table = Gui_Elements.results_table;
+            results_table_2 = Gui_Elements.results_table_2;
             main_axes = Gui_Elements.main_axes;
             
             % test for original data
@@ -315,11 +360,26 @@ classdef Callbacks
                 brushed_x = Data.brushed_data(:,1);
                 brushed_y = Data.brushed_data(:,2);
             elseif isempty(brushed) && isempty(Data.brushed_data)
-                return
+                try
+                    len = length(orig_line);
+                    lb = round(len*Data.FR_left_border/100);
+                    rb = round(len*Data.FR_right_border/100);
+                    brushed_x = orig_line(lb:rb,1);
+                    brushed_y = orig_line(lb:rb,2);
+                    Data.brushed_data = [brushed_x brushed_y];
+                catch
+                    return
+                end
             end
             
             try
-                A_bl_range = Data.A_bl_range;
+                if ~Data.offsets_from_table
+                    A_bl_range = Data.A_bl_range;
+                else
+                    xoff = Data.xoffset.XData(1);
+                    yoff = Data.yoffset.YData(1);
+                    A_bl_range = [xoff yoff];
+                end
                 bl_x = A_bl_range(:,1);
                 bl_y = A_bl_range(:,2);
             catch
@@ -345,8 +405,10 @@ classdef Callbacks
             B_fit_range = [x y];
 
             % Versuche den in FR_relative angegebenen fitbereich umzusetzen
-            if ~isempty(Data.brushed_data)
+            if ~isempty(Data.brushed_data) && ~Data.borders_from_table
                 [Xr, Xl, FR_relative, ~] = UtilityFunctions.CalculateRelativeFitRange([], orig_line(:,1), orig_line(:,2), Data.brushed_data);
+            elseif ~isempty(Data.brushed_data) && Data.borders_from_table
+                [Xr, Xl, FR_relative, ~] = UtilityFunctions.CalculateRelativeFitRange([], orig_line(:,1), orig_line(:,2), []);
             else
                 return
             end
@@ -380,14 +442,27 @@ classdef Callbacks
             Lc_fit = values{1,2}; % kurve wurde vorher auf x=0 verschoben
             lk_fit = values{1,3};
             
-            F = linspace(0, 1e-9,1e3); 
+            % plot of the fitrepresentation
+            if isempty(bl_x)
+                xoff = 0;
+            else
+                xoff = mean(bl_x);
+            end
+            if isempty(bl_y)
+                yoff = 0;
+            else
+                yoff = mean(bl_y);
+            end
+            max_force = max(abs(orig_line(:,2)));
+            bound = max_force + 1e-1*max_force + yoff;
+            F = linspace(0, bound,1e3); 
             ex_fit = m_FJC(F, [Ks_fit Lc_fit lk_fit], [kb T]);
             
             cla(main_axes)
             hold(main_axes, 'on')
             orig_line_object = plot(main_axes, orig_line(:,1), orig_line(:,2), '.b',...
                 'ButtonDownFcn', @Callbacks.SetStartPoint);
-            fit_line_object = plot(main_axes, ex_fit + mean(bl_x), -F + mean(bl_y), 'r-');
+            fit_line_object = plot(main_axes, ex_fit + xoff, -F + yoff, 'r-');
             fit_range_object = UtilityFunctions.plotFitRange(main_axes,...
                 orig_line, Xl, Xr);
             hold(main_axes, 'off')
@@ -399,19 +474,25 @@ classdef Callbacks
             % "echte" länge des Abrisses im Koordinatensystem wird als
             % "position" bezeichent
             if ~isempty(bl_x)
-                position = Lc_fit + bl_x(1);
+                rupture_length = Lc_fit + bl_x(1);
             else
-                position = Lc_fit;
+                rupture_length = Lc_fit;
             end
             
             try
-                fitValues = table(Ks_fit, position, lk_fit, Xl, Xr, FR_relative, Lc_fit);
+                xoffset = mean(bl_x);
+                yoffset = mean(bl_y);
+                fitValues = table(Ks_fit, Lc_fit, lk_fit, xoffset, yoffset, Xl, Xr, FR_relative, rupture_length);
             catch
                 % something went wrong, do nothing
+                xoffset = [];
+                yoffset = [];
                 fitValues = [];
             end
-            results_table.ColumnFormat = {'numeric','numeric', 'numeric', 'numeric', 'numeric', 'numeric', 'numeric'};
-            results_table.Data = [Ks_fit position lk_fit Xl Xr FR_relative Lc_fit];
+            results_table.ColumnFormat = {'numeric','numeric', 'numeric', 'numeric'};
+            results_table_2.ColumnFormat = {'numeric', 'numeric', 'numeric', 'numeric', 'numeric'};
+            results_table.Data = [Ks_fit Lc_fit lk_fit rupture_length];
+            results_table_2.Data = [xoffset yoffset Xl Xr FR_relative];
 
             % Schreibe die Tabelle fitValues in den "base" Workspace als Output
             Data.fitValues = fitValues;
@@ -419,6 +500,7 @@ classdef Callbacks
             Data.fit_line_object = fit_line_object;
             Data.fit_line = [fit_line_object.XData' fit_line_object.YData']; 
             Data.fit_range_object = fit_range_object;
+            Data.A_bl_range = A_bl_range;
             Data.FR_left_border = Xl;
             Data.FR_right_border = Xr;
             assignin('base', 'Data', Data);
@@ -565,10 +647,6 @@ classdef Callbacks
                     end
             end
             
-            % tigger das Event um alle verbundenen Listenercallbacks
-            % auszuführen
-            Data.parameter.variable_parameter.FireEvent('UpdateObject');
-            
             % output
             assignin('base', 'Data', Data);
         end % UpdateParameterCallback
@@ -595,13 +673,88 @@ classdef Callbacks
                         return
                     end
             end
-            % tigger das Event um alle verbundenen Listenercallbacks
-            % auszuführen
-            Data.parameter.constant_parameter.FireEvent('UpdateObject');
-            
+
             % output
             assignin('base', 'Data', Data);
         end % UpdateConstantParameterCallback
+        
+        function UpdateFitParameterCallback(~, evt)
+            % UPDATEFITPARAMETERCALLBACK Update of Fit Parameter if the
+            % user wants to have numerical input of fit parameter like fit
+            % range, fit borders or offsets
+            
+            % input
+            Data = evalin('base', 'Data');
+            Gui_Elements = evalin('base', 'Gui_Elements');
+            main_axes = Gui_Elements.main_axes;
+            
+            col = evt.Indices(2);
+            switch col
+                case 1 % xoffset
+                    try
+                        delete(Data.xoffset);
+                        
+                    catch
+                    end
+                    try
+                        delete(Data.fit_range_object);
+                    catch
+                    end
+                    hold(main_axes, 'on')
+                    xoffset = vline(str2double(evt.EditData), 'k--');
+                    xoffset.Tag = 'xoffset';
+                    hold(main_axes, 'off');
+                    Data.xoffset = xoffset;
+                    Data.offsets_from_table = true;
+                case 2 % yoffset
+                    try
+                        delete(Data.yoffset);
+                    catch
+                    end
+                    try
+                        delete(Data.fit_range_object);
+                    catch
+                    end
+                    hold(main_axes, 'on')
+                    yoffset = hline(str2double(evt.EditData), 'k--');
+                    yoffset.Tag = 'xoffset';
+                    hold(main_axes, 'off');
+                    Data.yoffset = yoffset;
+                    Data.offsets_from_table = true;
+                case 3 % Xl
+                    try
+                        Data.FR_left_border = str2double(evt.EditData);
+                    catch
+                        return
+                    end
+                    Data.borders_from_table = true;
+                case 4 % Xr
+                    try
+                        Data.FR_right_border = str2double(evt.EditData);
+                    catch
+                        return
+                    end
+                    Data.borders_from_table = true;
+            end
+            
+            % output
+            assignin('base', 'Data', Data);
+        end % UpdateFitParameterCallback
+        
+        function CloseRequestCallback(src, evt)
+            if isa(evt, 'struct')
+                try
+                    event_source = evt.EventSourceName;
+                    if strcmp(event_source, 'Kraftkurven')
+                        return
+                    end
+                catch
+                    delete(src);
+                end
+            else
+                delete(src);
+            end
+        end % CloseRequestCallback
         
     end
     

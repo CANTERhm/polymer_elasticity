@@ -1,6 +1,22 @@
 classdef UtilityFunctions
     %UTILITYFUNCTIONS summary of all used utility function in
     %polymer_elasticity
+    %
+    % Copryright 2019 Julian Blaser
+    % This file is part of polymer_elasticity.
+    % 
+    % polymer_elasticity is free software: you can redistribute it and/or modify
+    % it under the terms of the GNU General Public License as published by
+    % the Free Software Foundation, either version 3 of the License, or
+    % (at your option) any later version.
+    % 
+    % polymer_elasticity is distributed in the hope that it will be useful,
+    % but WITHOUT ANY WARRANTY; without even the implied warranty of
+    % MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    % GNU General Public License for more details.
+    % 
+    % You should have received a copy of the GNU General Public License
+    % along with polymer_elasticity.  If not, see <http://www.gnu.org/licenses/>.
     
     methods(Static)
         
@@ -30,6 +46,10 @@ classdef UtilityFunctions
                 % wenn beides, FR_relative_border und fit_range, leer sind, muss
                 % abgebrochen werden
                 if isempty(fit_range)
+                    Data = evalin('base', 'Data');
+                    Xr = Data.FR_right_border;
+                    Xl = Data.FR_left_border;
+                    FR_relative = Xr-Xl;
                     return
                 end
 

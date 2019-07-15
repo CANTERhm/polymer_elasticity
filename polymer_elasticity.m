@@ -1,16 +1,26 @@
 %% poymere_elasticity
-% Es muss die Variable "DataSelection" im Workspace vorhanden sein, bevor
-% das Skirpt gestartet wird. "DataSelection" kann am einfachsten über die
-% App "Kraftkurven" erstellt werden.
-% DataSeletion: nx2 Vektor mit x, y koordinaten von Datenpunkten 
-%   - DataSelection(:,1): x-koordinaten
-%   - DataSelection(:,2): y-koordinaten
+% POLYMER_ELASTICITY This Program fits the freely jointed chain Model to a
+% Dataset aquired from Force-Clamp-Events.
+%   
+%   For more inoformation see
+%       - help entry in the "Polymer Elasticity" menu of polymer_elasticity
+%       - Help.docx in polymer_elasticity/Help
 %
-% Für eine Detailierte Anleitung siehe den Hilfe Tab im Slide-Menü von
-% polymere_elasticity
-% clearvars -except ForceCurves DataSelection savepath
-%
-% siehe auch: Hilfe.docx oder Hilfe.pdf
+% Copryright 2019 Julian Blaser
+% This file is part of polymer_elasticity.
+% 
+% polymer_elasticity is free software: you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation, either version 3 of the License, or
+% (at your option) any later version.
+% 
+% polymer_elasticity is distributed in the hope that it will be useful,
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+% GNU General Public License for more details.
+% 
+% You should have received a copy of the GNU General Public License
+% along with polymer_elasticity.  If not, see <http://www.gnu.org/licenses/>.
 
 %% erstelle parameter
 vary_parameter = Results();
@@ -32,14 +42,19 @@ constant_parameter.kb = 1.38e-23;
 hold_parameter.addproperty('Ks');
 hold_parameter.addproperty('Lc');
 hold_parameter.addproperty('lk');
-hold_parameter.Ks = false;
+hold_parameter.Ks = true;
 hold_parameter.Lc = true;
-hold_parameter.lk = true;
+hold_parameter.lk = false;
 
-%% daten einlesen
+%% read data
 
-x_orig = DataSelection(:,1);
-y_orig = DataSelection(:,2);
+if exist('DataSelection', 'var')
+    x_orig = DataSelection(:,1);
+    y_orig = DataSelection(:,2);
+else
+    x_orig = [];
+    y_orig = [];
+end
 fig = findobj('Tag', 'polymer_elasticity');
 Gui_Elements = struct();
 Data = struct();
@@ -51,10 +66,15 @@ if ~isempty(fig)
 end
 
 if isempty(fig)
+    g = groot;
     fig = figure();
     fig.NumberTitle = 'off';
     fig.Name = 'Polymer Elasticity';
     fig.Tag = 'polymer_elasticity';
+    
+    % calculate figure size depending on screen size of the primary screen
+    s = g.ScreenSize;
+    fig.Position = [s(3)/5 s(4)/4 s(3)/1.5 s(4)/1.5];
 else
     g = groot;
     set(g, 'CurrentFigure', fig);
@@ -63,12 +83,31 @@ end
 
 fig.SizeChangedFcn = @Callbacks.TableResizeCallback;
 
-%% erstelle gui
+% avoid closing polymer_elasticity by Kraftkurven
+fig.UserData.EditRequest = false;
+
+%% create menu
+polymer_elasticity_menu = uimenu('Text', '&Polymer Elasticity');
+
+% open Kraftkurven
+open_kraftkurven_submenu = uimenu(polymer_elasticity_menu);
+open_kraftkurven_submenu.Text = 'Open &Kraftkurven';
+open_kraftkurven_submenu.Accelerator = 'K';
+open_kraftkurven_submenu.MenuSelectedFcn = @Callbacks.LoadForceCurves;
+
+% help
+help_submenu = uimenu(polymer_elasticity_menu);
+help_submenu.Text = '&Help';
+help_submenu.Separator = 'on';
+help_submenu.MenuSelectedFcn = @Callbacks.OpenHelpCallback;
+
+%% create gui
 base = uix.VBox('Parent', fig);
 axes_box = uix.HBox('Parent', base);
 control_box = uix.VBox('Parent', base);
 btn_box = uix.HBox('Parent', control_box, 'Spacing', 10);
 results_table = uitable(control_box);
+results_table_2 = uitable(control_box);
 
 reimport_data_btn = uicontrol('Parent', btn_box, 'Style', 'pushbutton',...
     'String', 'Reimport DataSelection',...
@@ -80,25 +119,42 @@ new_fitrange_btn = uicontrol(btn_box, 'Style', 'pushbutton',...
     'String', 'Delete Fitrange',...
     'Callback', @Callbacks.new_fitrange_btn_callback);
 
-%% gui einstellungen
-base.Heights = [-4 -1];
+%% gui settings
+base.Heights = [-3.5 -1];
 base.Padding = 5;
-control_box.Heights = [30 -1];
+control_box.Heights = [20 -1 -1];
 control_box.Spacing = 10;
 axes_box.Padding = 0;
 axes_box.Spacing = 0;
 
-%% spaltennamen für results_table
-results_table.ColumnName = {'Ks Fit', 'Rupture Length', 'lk Fit', 'Xl', 'Xr', 'Distance', 'Lc Fit'};
+%% columnnames for results_table
+results_table.ColumnName = {'Ks Fit', 'Lc Fit', 'lk Fit', 'Rupture Length'};
 results_table.RowName = {};
+resutls_tabel.Data = {0, 0, 0, 0};
 
 % calculate ColumnWidth
-table_width = results_table.Position(3);
+g = groot;
+table_width = g.ScreenSize(3)/4;
 col_num = length(results_table.ColumnName);
 col_width = floor(table_width/col_num);
 results_table.ColumnWidth = {col_width};
 
-%% erstelle slide-panel 
+%% columnnames for results_table_2
+results_table_2.ColumnName = {'xoffset', 'yoffset', 'Xl', 'Xr', 'Distance'};
+results_table_2.RowName = {};
+results_table_2.Data = {nan, nan, nan, nan};
+
+results_table_2.ColumnEditable = [true true true true, false]; 
+results_table_2.CellEditCallback = @Callbacks.UpdateFitParameterCallback;
+
+% calculate ColumnWidth
+g = groot;
+table_width = g.ScreenSize(3)/4;
+col_num = length(results_table_2.ColumnName);
+col_width = floor(table_width/col_num);
+results_table_2.ColumnWidth = {col_width};
+
+%% create slide-panel 
 % das slide_panel ist eine die erste spalte der axes_box. Diese wird belegt
 % mit einer neuen HBox, dessen breite über den Slide-btn varriert werden
 % kann. so wird das "Slide" verhalten erzeugt
@@ -108,7 +164,7 @@ slide_btn = uicontrol('Parent', slide_panel_container, 'Style', 'togglebutton',.
     'String', '>>',...
     'Callback', @Callbacks.SlidePanelResizeCallback);
 
-%% slide-panel: modellparameter-tab
+%% slide-panel: modelparameter-tab
 dialog_container = uix.VBox('Parent', slide_panel);
 vary_parameter_panel = uix.BoxPanel('Parent', dialog_container,...
     'Title', 'Variable Parameters');
@@ -153,163 +209,26 @@ do_fit_btn = uicontrol('Parent', button_container, 'Style', 'pushbutton',...
 % configure the dialog_container
 dialog_container.Heights = [-1 20 -1];
 
-%% slide-panel: hilfe-tab
-help_panel = uix.ScrollingPanel('Parent', slide_panel);
-help_container = uix.VBox('parent', help_panel);
-
-general_panel = uix.BoxPanel('Parent', help_container, 'Title', 'General');
-general_container = uix.VBox('Parent', general_panel);
-userguide_panel = uix.BoxPanel('Parent', help_container, 'Title', 'User Guide');
-userguide_container = uix.VBox('Parent', userguide_panel);
-other_panel = uix.BoxPanel('Parent', help_container, 'Title', 'Miscellaneous');
-other_container = uix.VBox('Parent', other_panel);
-
-% content general_container
-% str = {['Dieses Programm dient der Auswertung von Abrissen (Kraft vs. Weg) ' ...
-%     'aus Force-Clamp-Experimenten, oder ähnlichen Kurven. Die Abrisse werden ' ...
-%     'mit dem Modell der erweiterten, freiverbundenen Kette Ausgewertet: '],...
-%     'Lc*[coth(x)-1/s]*(1+F/(Ks*lk)) mit x = F*lk/(kb*T)',...
-%     ''};
-str = {['The purpose of polymer_elasticity is the evaluation of Clamp-Events ' ...
-    'of Force-Curves (Force vs. Distance) recorded in Force-Clamp-Experiments.' ...
-    'Those Clamp-Events were fitted via the "extended freely jointed Chain" Model:'],...
-    'Lc*[coth(x)-1/s]*(1+F/(Ks*lk)) were x = F*lk/(kb*T)',...
-    ''};
-UtilityFunctions.textLine(general_panel, str,...
-    'fontAngle', 'normal',...
-    'fontWeight', 'normal',...
-    'horizontalAlignment', 'left');
-
-% content userguide_container
-str = '1. Selection of a Clamp-Event';
-UtilityFunctions.textLine(userguide_container, str,...
-    'fontAngle', 'normal',...
-    'fontWeight', 'bold',...
-    'horizontalAlignment', 'left');
-
-% str = {['Der Startpunkt des Abrisses wird mit der linken Maustaste auf der linken' ...
-%     'Abbildung (Titel: Wähle Startpunkt des Abrisses) gewählt. Wenn kein Fehler aufgetreten ist,' ...
-%     'wird in dieser Abbildung der gewählte Startpunkt durch ein gestrichteltes Fadenkreuz' ...
-%     'mit der Beschriftung "x/y Offset" markiert. In der rechten Abbdilung (Titel zunächst: ---) ' ...
-%     'erscheint der um den Offset korrigierten Abriss. Der Abbildungstitel' ...
-%     'der rechten Abbdildung ändert sich zu "Wähle Fitbereich".'],...
-%     ''};
-
-str = {['To determine the beginning of a Clamp-Event left-click the Graph at the ' ...
-    'Startpoint of the Event. If the Selection was succesful, a dashed black ' ...
-    'Crosshair would appear. '],...
-    ''};
-UtilityFunctions.textLine(userguide_container, str,...
-    'fontAngle', 'normal',...
-    'fontWeight', 'normal',...
-    'horizontalAlignment', 'left');
-
-str = '2. Selection of a fitrange';
-UtilityFunctions.textLine(userguide_container, str,...
-    'fontAngle', 'normal',...
-    'fontWeight', 'bold',...
-    'horizontalAlignment', 'left');
-
-% str = {['Um Den Datenbereich für den Fit des Modells auszuwählen muss der Button ' ...
-%     '"Markiere Datenbereich" aktiviert werden. Danach ändert sich der Cursor ' ...
-%     'im Bereich beider Abbildungen zu einem schwarzen, durchgehenden Fadenkreuz. ' ... 
-%     'Nur in der rechten Abbdilung (Titel: Wähle Fitbereich) darf der Fitbereich ausgewält werden. ' ...
-%     'Zum Auswählen des Fitbereichs, linke Maustaste gedrückt halten und mit dem Rechteck ' ...
-%     'die zu merkierenden Daten überstreichen. Nachdem die linke Maustaste losgelassen wurde, ' ...
-%     'wird das Modell an die Daten angepasst und in der rechten Abbildung angezeigt. '],...
-%     ''};
-str = {['To choose the Fitrange, left-click the Button called "New Fitrange" ' ...
-    'and the Cursor changes to a small, black Crosshair. Drag a red rectangle ' ...
-    'around the region of interest with the pressed, left Mousbutton. If the selection ' ...
-    'was successful, the Fit would start automatically and appear on the Figure as a red Line. The ' ...
-    'chosen Fitrange will also apear as a grey Area.'],...
-    ''};
-UtilityFunctions.textLine(userguide_container, str,...
-    'fontAngle', 'normal',...
-    'fontWeight', 'normal',...
-    'horizontalAlignment', 'left');
-
-% inhalt other_container
-str = 'Load New Data';
-UtilityFunctions.textLine(other_container, str,...
-    'fontAngle', 'normal',...
-    'fontWeight', 'bold',...
-    'horizontalAlignment', 'left');
-
-% str = {['Veränderte Daten in "DataSelection" können neu importiert werden. Dazu ' ...
-%     'muss der Button "Reimportiere DataSelection" betätigt werden. Danach ' ...
-%     'wird der neue Datensatz in der linken Abbildung angezeigt. Alle Offsets, ' ...
-%     'die Markierung des Fitbereichs, der Fit sowie der Graph des Abrisses werden gelöscht'],...
-%     ''};
-str = {['If the Data in the Variable "DataSelection" changed, it would be possible to ' ...
-    'reimport the Data to polymer_elasticity, by pressing the Button called "Reimport DataSelection". ' ...
-    'Thereafter the new Graph will apear in the Figure. All Offsets, Fitranges and Fitrepresentations will be deleted'],...
-    ''};
-UtilityFunctions.textLine(other_container, str,...
-    'fontAngle', 'normal',...
-    'fontWeight', 'normal',...
-    'horizontalAlignment', 'left');
-
-str = 'Delete Fitrange';
-UtilityFunctions.textLine(other_container, str,...
-    'fontAngle', 'normal',...
-    'fontWeight', 'bold',...
-    'horizontalAlignment', 'left');
-
-% str = {['Um einen neuen Fitbereich zu wählen ohne dabei den aktuellen Offset ' ...
-%     'des Abrisses zu ändern, muss der Button "Neuer Fitbereich" betätigt werden. ' ...
-%     'Es wird der aktuelle Fitbereich, sowie der Fit selbst gelöscht.']};
-str = {['To delete the actual Fitrange press the Button "Delete Fitrange". This will only ' ...
-    'delete the Fitrange and the Fitrepresentation. All Offsets remain unchanged.']};
-UtilityFunctions.textLine(other_container, str,...
-    'fontAngle', 'normal',...
-    'fontWeight', 'normal',...
-    'horizontalAlignment', 'left');
-
-str = 'Save Figure Elements';
-UtilityFunctions.textLine(other_container, str,...
-    'fontAngle', 'normal',...
-    'fontWeight', 'bold',...
-    'horizontalAlignment', 'left');
-
-% str = {['Es ist möglich den Fit des Abrisses als .png-Bild zu speichern. Dazu ' ...
-%     'muss mit der rechten Maustaste auf die rechte Abbildung geklickt werden. Es ' ...
-%     'erscheint ein Kontextmenü, indem der Menüpunkt "Grafik speicher" auswewählt werden muss. ' ...
-%     'Danach kann in einem Dialog der Speicherort festgelegt werden (noch nicht implementiert).']};
-str = {['To get a "good loking" version of the Elements in the Figure, right-click on the white ' ...
-    'Background of the Figure. In the Contextmenu chose "Save Figure" and the plottools will ' ...
-    'open.']};
-UtilityFunctions.textLine(other_container, str,...
-    'fontAngle', 'normal',...
-    'fontWeight', 'normal',...
-    'horizontalAlignment', 'left');
-
-
-
-% hilfe-tab einstellungen
-help_panel.MinimumHeights = 700;
-help_panel.MinimumWidths = 300;
-
-help_container.Heights = [100 -1 -1];
-userguide_container.Heights = [15 -1 15 -1];
-other_container.Heights = [15 -1 15 -1 15 -1];
-
-%% einstellungen slide-panle
+%% settings of slide-panel
 extended_width = 400;
 shrinked_width = 20;
 
 axes_box.Widths(1) = shrinked_width;
 slide_panel_container.Widths = [-1 20];
-slide_panel.TabTitles = {'Modellparameter', 'Hilfe'};
+slide_panel.TabTitles = {'Modellparameter'};
 slide_panel.TabWidth = 100;
 
-%% erstelle main_axes für den Fit
+%% create main_axes 
 main_axes = axes(axes_box);
 main_axes.Tag = 'main_axes';
-orig_line_object = plot(main_axes, x_orig, y_orig, 'b.',...
-    'ButtonDownFcn', @Callbacks.SetStartPoint);
 xlabel('vertical tip position / m');
 ylabel('vertical deflection / N')
+if ~isempty(x_orig) || ~isempty(y_orig)
+    orig_line_object = plot(main_axes, x_orig, y_orig, 'b.',...
+        'ButtonDownFcn', @Callbacks.SetStartPoint);
+else
+    orig_line_object = [];
+end
 grid on
 grid minor
 
@@ -327,12 +246,12 @@ cm = uicontextmenu;
 main_axes.UIContextMenu = cm;
 uimenu(cm, 'Label', 'Save Figure', 'Callback', @Callbacks.SaveFigure);
 
-%% erstelle data brush-object
+%% create data brush-object
 h = brush(fig);
 h.Enable = 'off';
 h.ActionPostCallback = @Callbacks.DoFit;
 
-%% erstelle Gui_Elements 
+%% create Gui_Elements 
 Gui_Elements.fig = fig;
 Gui_Elements.main_axes = main_axes;
 
@@ -342,6 +261,7 @@ Gui_Elements.control_box = control_box;
 Gui_Elements.btn_box = btn_box;
 
 Gui_Elements.results_table = results_table;
+Gui_Elements.results_table_2 = results_table_2;
 Gui_Elements.new_fitrange_btn = new_fitrange_btn;
 Gui_Elements.data_brush_btn = data_brush_btn;
 Gui_Elements.reimport_data_btn = reimport_data_btn;
@@ -355,20 +275,23 @@ Gui_Elements.slide_panel_constant_parameter_table = constant_parameter_table;
 Gui_Elements.slide_panel_extended_width = extended_width;
 Gui_Elements.slide_panel_shrinked_width = shrinked_width;
 
-%% erstelle Data 
+%% create Data 
+Data.A_bl_range = [];
 Data.orig_line_object = orig_line_object;
 Data.orig_line = [x_orig y_orig];
 Data.fit_line_object = [];
 Data.fit_line = [];
 Data.fit_range_object = [];
+Data.offsets_from_table = false;
 Data.xoffset = [];
 Data.yoffset = [];
 Data.brushed_data = [];
+Data.borders_from_table = false;
 Data.FR_left_border = [];
 Data.FR_right_border = [];
 Data.parameter.variable_parameter = vary_parameter;
 Data.parameter.constant_parameter = constant_parameter;
 Data.parameter.hold_parameter = hold_parameter;
 
-%% löschen unnötiger Variablen
+%% delete unnecessary variables
 clearvars -except ForceCurves DataSelection savepath Data Gui_Elements
