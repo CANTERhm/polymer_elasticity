@@ -137,6 +137,14 @@ classdef Callbacks
         end % reimport_data_btn_callback
         
         function calculate_costfunction_btn_callback(~,~)
+            % CALCULATE_COSTFUNCTION_BTN_CALLBACK calculates the
+            % Costfunction of the fit and polts it as a surface-plot
+            
+            % input
+            Data = evalin('base', 'Data');
+            
+            
+            
         end % calculate_costfunction_btn_callback
         
     end
@@ -760,6 +768,12 @@ classdef Callbacks
         end % CloseRequestCallback
         
         function EditPlotNumberCallback(src, ~)
+            % EDITPLOTNUMBERCALLBACK This callback evaluates the input for
+            % the cf_plotnumber_edit-object. 
+            %
+            %   If the userinput is not convertable to a double-type
+            %   Variable, the userinput gets declined.
+            
             % input
             Data = evalin('base', 'Data');
             
@@ -775,6 +789,72 @@ classdef Callbacks
             % output
             assignin('base', 'Data', Data);
         end % EditPlotNumberCallback
+        
+        function CostFunctionHoldParameterCallback(src, evt)
+            % COSTFUNCTIONHOLDPARAMETERCALLBACK Ensures, that only one
+            % Checkbox for the Hold-Column in the Cost Function Parameter
+            % Table can be checked.
+            
+            %input
+            Data = evalin('base', 'Data');
+            
+            % procedure
+            row = evt.Indices(1);
+            col = evt.Indices(2);
+            new_hold_data = false(3,1);
+            
+            % ensure that for all times only one hold-checkbox can be checked.
+            % any other checkbox must be unchecked.
+            switch col
+                case 4 % hold-column
+                    if (evt.EditData)
+                        new_hold_data(row, 1) = true;
+                        src.Data(:,4) = num2cell(new_hold_data);
+                    else
+                        new_hold_data(row, 1) = evt.PreviousData;
+                        src.Data(:,4) = num2cell(new_hold_data);
+                    end
+                case 2 % value-column
+                    if isempty(evt.Error)
+                        switch row
+                            case 1 % cf_Ks
+                                value = str2double(evt.EditData);
+                                Data.parameter.variable_parameter.cf_Ks = value; 
+                            case 2 % cf_Lc
+                                value = str2double(evt.EditData);
+                                Data.parameter.variable_parameter.cf_Lc = value; 
+                            case 3 % cf_lk
+                                value = str2double(evt.EditData);
+                                Data.parameter.variable_parameter.cf_lk = value;
+                        end
+                    end
+            end
+            
+            % output
+            assignin('base', 'Data', Data);
+            
+        end % CostFunctionHOldParameterCallback
+        
+        function CostFunctionRangeEditCallback(~, evt)
+            % COSTFUNCTIONRANGEEDITCALLBACK Writes valid range-values for
+            % the Cost Function into the Data.cf_range-property
+            
+            % input
+            Data = evalin('base', 'Data');
+            
+            % procedure
+            row = evt.Indices(1);
+            col = evt.Indices(2);
+            
+            if isempty(evt.Error)
+                value = str2double(evt.EditData);
+                Data.cf_parameter_range(row, col-1) = value;
+            end
+            
+            % output
+            assignin('base', 'Data', Data);
+            
+        end % CostFunctionRangeEditCallback
         
     end
     

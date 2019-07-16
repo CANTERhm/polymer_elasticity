@@ -49,7 +49,7 @@ hold_parameter.addproperty('Ks');
 hold_parameter.addproperty('Lc');
 hold_parameter.addproperty('lk');
 hold_parameter.Ks = true;
-hold_parameter.Lc = true;
+hold_parameter.Lc = false;
 hold_parameter.lk = false;
 hold_parameter.addproperty('cf_Ks');
 hold_parameter.addproperty('cf_Lc');
@@ -227,7 +227,9 @@ dialog_container.Heights = [-1 -1 25];
 %% slide-panel: cost function tab
 cf_container = uix.VBox('Parent', slide_panel);
 cf_panel = uix.BoxPanel('Parent', cf_container, 'Title', 'Cost Function Parameter');
+cf_range_panel = uix.BoxPanel('Parent', cf_container, 'Title', 'Cost Function Parameter Ranges');
 cf_parameter_container = uix.VBox('Parent',cf_panel);
+cf_parameter_range_container = uix.VBox('Parent', cf_range_panel);
 cf_edit_field_container = uix.HButtonBox('Parent', cf_container);
 cf_button_container = uix.HButtonBox('Parent', cf_container);
 
@@ -242,6 +244,19 @@ cf_parameter_table.RowName = {};
 cf_parameter_table.ColumnName = {'Parameter', 'Value', 'Unit', 'hold?'};
 cf_parameter_table.Data = cost_function_data;
 cf_parameter_table.ColumnEditable = [false true false true];
+cf_parameter_table.CellEditCallback = @Callbacks.CostFunctionHoldParameterCallback;
+
+% content of cost function parameter range table
+cost_function_range_data = {'Ks', 0, 0.5;...
+    'Lc', 0, 0.5;...
+    'lk', 0, 0.5};
+
+cf_parameter_range_table = uitable(cf_parameter_range_container);
+cf_parameter_range_table.RowName = {};
+cf_parameter_range_table.ColumnName = {'Parameter', 'Lower Bound [%]', 'Upper Bound [%]'};
+cf_parameter_range_table.Data = cost_function_range_data;
+cf_parameter_range_table.ColumnEditable = [false true true];
+cf_parameter_range_table.CellEditCallback = @Callbacks.CostFunctionRangeEditCallback;
 
 % plot number edit field
 cf_edit_field_container.HorizontalAlignment = 'right';
@@ -263,7 +278,7 @@ calc_cost_func_btn = uicontrol('Parent', cf_button_container, 'Style', 'pushbutt
     'Callback', @Callbacks.calculate_costfunction_btn_callback);
 
 % configuration of cf_container
-cf_container.Heights = [-1 25 25];
+cf_container.Heights = [-1 -1 25 25];
 
 %% settings of slide-panel
 extended_width = 400;
@@ -271,7 +286,7 @@ shrinked_width = 20;
 
 axes_box.Widths(1) = shrinked_width;
 slide_panel_container.Widths = [-1 20];
-slide_panel.TabTitles = {'Model', 'Const Function'};
+slide_panel.TabTitles = {'Model', 'Cost Function'};
 slide_panel.TabWidth = 100;
 
 %% create main_axes 
@@ -330,6 +345,7 @@ Gui_Elements.slide_panel_vary_parameter_table = vary_parameter_table;
 Gui_Elements.slide_panel_constant_parameter_table = constant_parameter_table;
 Gui_Elements.slide_panel_do_fit_btn = do_fit_btn;
 Gui_Elements.slide_panel_cf_parameter_table = cf_parameter_table;
+Gui_Elements.slide_panel_cf_parameter_range_table = cf_parameter_range_table;
 Gui_Elements.slide_panel_cf_plotnumber_edit = cf_plotnumber_edit;
 Gui_Elements.slide_panel_cf_calc_cost_func_btn = calc_cost_func_btn;
 Gui_Elements.slide_panel_extended_width = extended_width;
@@ -350,6 +366,7 @@ Data.borders_from_table = false;
 Data.FR_left_border = [];
 Data.FR_right_border = [];
 Data.cf_plotnumber = 1;
+Data.cf_parameter_range = [0 0.5; 0 0.5; 0 0.5];
 Data.parameter.variable_parameter = vary_parameter;
 Data.parameter.constant_parameter = constant_parameter;
 Data.parameter.hold_parameter = hold_parameter;
