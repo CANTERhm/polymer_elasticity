@@ -142,8 +142,39 @@ classdef Callbacks
             
             % input
             Data = evalin('base', 'Data');
+            DataSelection = evalin('base', 'DataSelection');
             
+            % procedure
+            plotNumber = Data.cf_plotnumber;
+            cwave = [Data.parameter.variable_parameter.Ks;...
+                Data.parameter.variable_parameter.Lc;...
+                Data.parameter.variable_parameter.lk;...
+                Data.parameter.constant_parameter.kb;...
+                Data.parameter.constant_parameter.T];
+            range = Data.cf_parameter_range;
+            kraft = -DataSelection(:,2);
+            weg = DataSelection(:,1);
+            Name1 = ['Costfunction' num2str(plotNumber)];
+            Tag_figure1 = ['costfunction' num2str(plotNumber)];
             
+            % surface plot overview
+            [J, surfx, surfy] = UtilityFunctions.DoCalculation(cwave, weg, kraft, 100, range);
+            surf_object = UtilityFunctions.DoSurf(surfx, surfy, J, Name1, Tag_figure1, []);
+            
+            % create a context menu for the cost function refinement
+            if isempty(surf_object.UIContextMenu)
+                cm = uicontextmenu;
+                surf_object.UIContextMenu = cm;
+                uimenu(cm, 'Label', 'Cost Function Refinment', 'Callback', @Callbacks.CostFunctionRefinement);
+                uimenu(cm, 'Label', 'Plot Minimum Coordinates', 'Callback', @Callbacks.PlotMinimumCoordinates);
+            end
+            
+            % output
+            Data.cf_surf_object.(Tag_figure1) = surf_object;
+            Data.cf_surf_data.(Tag_figure1).X = surfx;
+            Data.cf_surf_data.(Tag_figure1).Y = surfy;
+            Data.cf_surf_data.(Tag_figure1).Z = J;
+            assignin('base', 'Data', Data);
             
         end % calculate_costfunction_btn_callback
         
@@ -234,10 +265,131 @@ classdef Callbacks
             cd(current_directory);
             
         end % LoadForceCurves
+        
         function OpenHelpCallback(~, ~)
             web('Help\polymer_elasticity.html',...
                 '-browser');
         end % OpenHelpCallback
+        
+    end
+    
+    methods(Static) % Context Menu Callbacks
+        
+        function SaveFigure(~, ~)
+            Data = evalin('base', 'Data');
+            try
+                orig_line = Data.orig_line;
+            catch
+                orig_line = [];
+            end
+            try
+                fit_line = Data.fit_line;
+            catch
+                fit_line = [];
+            end
+            try
+                Xl = Data.FR_left_border;
+            catch
+                Xl = [];
+            end
+            try
+                Xr = Data.FR_right_border;
+            catch
+                Xr = [];
+            end
+            try
+                bl_range = Data.A_bl_range;
+            catch
+                bl_range = [];
+            end
+            
+            % create figure elements
+            fig = figure('NumberTitle', 'off', 'Name', 'Save Figure', 'Color', 'white');
+            ax = axes(fig);
+            grid on;
+            grid minor;
+            plottools;
+            
+            % sizes of axes elements
+            ax.XLimMode = 'auto';
+            ax.XAxis.Label.String = 'Vertical Tip Position / m';
+            ax.XAxis.FontSize = 30;
+            ax.XAxis.Label.FontSize = 30;
+            ax.XAxis.LineWidth = 0.5;
+            
+            ax.YLimMode = 'auto';
+            ax.YAxis.Label.String = 'Vertical Deflection / N';
+            ax.YAxis.FontSize = 30;
+            ax.YAxis.Label.FontSize = 30;
+            ax.YAxis.LineWidth = 0.5;
+            
+            % plot data
+            if ~isempty(orig_line) 
+                hold(ax, 'on');
+                scatter(ax, orig_line(:,1), orig_line(:,2), 'b.',...
+                    'Marker', '.',...
+                    'MarkerEdgeColor', 'blue',...
+                    'MarkerFaceColor', 'blue',...
+                    'SizeData', 50);
+                hold(ax, 'off');
+            end
+            
+            % plot fitted data
+            if ~isempty(fit_line)
+                hold(ax, 'on');
+                plot(ax, fit_line(:,1), fit_line(:,2), 'r-',...
+                    'LineWidth', 2);
+                hold(ax, 'off');
+            end
+            
+            % tight layout
+            outerpos = ax.OuterPosition;
+            ti = ax.TightInset; 
+            left = outerpos(1) + ti(1);
+            bottom = outerpos(2) + ti(2);
+            ax_width = outerpos(3) - ti(1) - ti(3);
+            ax_height = outerpos(4) - ti(2) - ti(4);
+            ax.Position = [left bottom ax_width ax_height];
+            
+            % mark data offsets and fit range
+            if ~isempty(orig_line) && ~isempty(bl_range) && ...
+                    ~isempty(Xl) && ~isempty(Xr)
+                ax.XLimMode = 'auto';
+                ax.YLimMode = 'auto';
+                hold(ax, 'on');
+                xoffset = vline(mean(bl_range(:,1)), 'k--');
+                yoffset = hline(mean(bl_range(:,2)), 'k--');
+                UtilityFunctions.plotFitRange(ax, orig_line, Xl, Xr);
+                delete(xoffset);
+                xoffset2 = vline(mean(bl_range(:,1)), 'k--');
+                xoffset2.LineWidth = 2;
+                yoffset.LineWidth = 2;
+                hold(ax, 'off');
+            end
+            
+        end % SaveFigure
+        
+        function CostFunctionRefinement(~, ~)
+        end % CostFunctionRefinement
+        
+        function PlotMinimumCoordinates(~, ~)
+            % input
+            Data = evalin('base', 'Data');
+            plotnumber = Data.cf_plotnumber;
+            Tag_scatter = ['global_minimum' plotnumber];
+            fig = gcf();
+            Tag_surface = fig.Tag;
+            
+            
+            % procedure
+            GlobMin = plotGlobMin(Data.cf_refined_surf_data.(Tag_surface),...
+                Tag_scatter);
+            
+            %output
+            Data.cf_surf_data.(Tag_surface).minimum_coordinates = GlobMin;
+            assignin('base', 'Data', Data);
+            
+        end % PlotMinimumCoordinates
         
     end
     
@@ -519,100 +671,6 @@ classdef Callbacks
 
         end % DoFit
         
-        function SaveFigure(~, ~)
-            Data = evalin('base', 'Data');
-            try
-                orig_line = Data.orig_line;
-            catch
-                orig_line = [];
-            end
-            try
-                fit_line = Data.fit_line;
-            catch
-                fit_line = [];
-            end
-            try
-                Xl = Data.FR_left_border;
-            catch
-                Xl = [];
-            end
-            try
-                Xr = Data.FR_right_border;
-            catch
-                Xr = [];
-            end
-            try
-                bl_range = Data.A_bl_range;
-            catch
-                bl_range = [];
-            end
-            
-            % create figure elements
-            fig = figure('NumberTitle', 'off', 'Name', 'Save Figure', 'Color', 'white');
-            ax = axes(fig);
-            grid on;
-            grid minor;
-            plottools;
-            
-            % sizes of axes elements
-            ax.XLimMode = 'auto';
-            ax.XAxis.Label.String = 'Vertical Tip Position / m';
-            ax.XAxis.FontSize = 30;
-            ax.XAxis.Label.FontSize = 30;
-            ax.XAxis.LineWidth = 0.5;
-            
-            ax.YLimMode = 'auto';
-            ax.YAxis.Label.String = 'Vertical Deflection / N';
-            ax.YAxis.FontSize = 30;
-            ax.YAxis.Label.FontSize = 30;
-            ax.YAxis.LineWidth = 0.5;
-            
-            % plot data
-            if ~isempty(orig_line) 
-                hold(ax, 'on');
-                scatter(ax, orig_line(:,1), orig_line(:,2), 'b.',...
-                    'Marker', '.',...
-                    'MarkerEdgeColor', 'blue',...
-                    'MarkerFaceColor', 'blue',...
-                    'SizeData', 50);
-                hold(ax, 'off');
-            end
-            
-            % plot fitted data
-            if ~isempty(fit_line)
-                hold(ax, 'on');
-                plot(ax, fit_line(:,1), fit_line(:,2), 'r-',...
-                    'LineWidth', 2);
-                hold(ax, 'off');
-            end
-            
-            % tight layout
-            outerpos = ax.OuterPosition;
-            ti = ax.TightInset; 
-            left = outerpos(1) + ti(1);
-            bottom = outerpos(2) + ti(2);
-            ax_width = outerpos(3) - ti(1) - ti(3);
-            ax_height = outerpos(4) - ti(2) - ti(4);
-            ax.Position = [left bottom ax_width ax_height];
-            
-            % mark data offsets and fit range
-            if ~isempty(orig_line) && ~isempty(bl_range) && ...
-                    ~isempty(Xl) && ~isempty(Xr)
-                ax.XLimMode = 'auto';
-                ax.YLimMode = 'auto';
-                hold(ax, 'on');
-                xoffset = vline(mean(bl_range(:,1)), 'k--');
-                yoffset = hline(mean(bl_range(:,2)), 'k--');
-                UtilityFunctions.plotFitRange(ax, orig_line, Xl, Xr);
-                delete(xoffset);
-                xoffset2 = vline(mean(bl_range(:,1)), 'k--');
-                xoffset2.LineWidth = 2;
-                yoffset.LineWidth = 2;
-                hold(ax, 'off');
-            end
-            
-        end % SaveFigure
-        
         function UpdateVaryParameterCallback(~, evt)
             % CellEditCallback für die tabelle der variablen parameter des
             % modells
@@ -802,6 +860,7 @@ classdef Callbacks
             row = evt.Indices(1);
             col = evt.Indices(2);
             new_hold_data = false(3,1);
+            choice = {'cf_Ks'; 'cf_Lc'; 'cf_lk'};
             
             % ensure that for all times only one hold-checkbox can be checked.
             % any other checkbox must be unchecked.
@@ -810,6 +869,13 @@ classdef Callbacks
                     if (evt.EditData)
                         new_hold_data(row, 1) = true;
                         src.Data(:,4) = num2cell(new_hold_data);
+                        hold_par = choice(new_hold_data);
+                        var_par = choice(~new_hold_data);
+                        var1 = var_par(1);
+                        var2 = var_par(2);
+                        Data.parameter.hold_parameter.(hold_par{1}) = true;
+                        Data.parameter.hold_parameter.(var1{1}) = false;
+                        Data.parameter.hold_parameter.(var2{1}) = false;
                     else
                         new_hold_data(row, 1) = evt.PreviousData;
                         src.Data(:,4) = num2cell(new_hold_data);

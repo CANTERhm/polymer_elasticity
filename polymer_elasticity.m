@@ -247,9 +247,9 @@ cf_parameter_table.ColumnEditable = [false true false true];
 cf_parameter_table.CellEditCallback = @Callbacks.CostFunctionHoldParameterCallback;
 
 % content of cost function parameter range table
-cost_function_range_data = {'Ks', 0, 0.5;...
-    'Lc', 0, 0.5;...
-    'lk', 0, 0.5};
+cost_function_range_data = {'Ks', 0, 2;...
+    'Lc', 0, 2;...
+    'lk', 0, 2};
 
 cf_parameter_range_table = uitable(cf_parameter_range_container);
 cf_parameter_range_table.RowName = {};
@@ -366,7 +366,11 @@ Data.borders_from_table = false;
 Data.FR_left_border = [];
 Data.FR_right_border = [];
 Data.cf_plotnumber = 1;
-Data.cf_parameter_range = [0 0.5; 0 0.5; 0 0.5];
+Data.cf_parameter_range = [0 2; 0 2; 0 2];
+Data.cf_surf_object = [];
+Data.cf_surf_data = [];
+Data.cf_refined_surf_object = [];
+Data.cf_refined_surf_data = [];
 Data.parameter.variable_parameter = vary_parameter;
 Data.parameter.constant_parameter = constant_parameter;
 Data.parameter.hold_parameter = hold_parameter;
