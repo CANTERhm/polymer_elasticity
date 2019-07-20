@@ -142,6 +142,7 @@ classdef Callbacks
             
             % input
             Data = evalin('base', 'Data');
+            Gui_Elements = evalin('base', 'Gui_Elements');
             DataSelection = evalin('base', 'DataSelection');
             
             % procedure
@@ -169,12 +170,21 @@ classdef Callbacks
                 uimenu(cm, 'Label', 'Plot Minimum Coordinates', 'Callback', @Callbacks.PlotMinimumCoordinates);
             end
             
+            % create a data brush-object for cost function
+            ax = surf_object.Parent;
+            fig = ax.Parent;
+            h = brush(fig);
+            h.Enable = 'off';
+            h.ActionPostCallback = @Callbacks.CostFunctionRefinementCallback;
+            
             % output
             Data.cf_surf_object.(Tag_figure1) = surf_object;
             Data.cf_surf_data.(Tag_figure1).X = surfx;
             Data.cf_surf_data.(Tag_figure1).Y = surfy;
             Data.cf_surf_data.(Tag_figure1).Z = J;
+            Gui_Elements.cf_data_brush.(Tag_figure1) = h;
             assignin('base', 'Data', Data);
+            assignin('base', 'Gui_Elements', Gui_Elements);
             
         end % calculate_costfunction_btn_callback
         
@@ -378,14 +388,30 @@ classdef Callbacks
             plotnumber = Data.cf_plotnumber;
             Tag_scatter = ['global_minimum' plotnumber];
             fig = gcf();
-            Tag_surface = fig.Tag;
+            surf_object = findobj(fig, 'Type', 'surface');
+            Tag_surface = surf_object.Tag;
             
-            
-            % procedure
-            GlobMin = plotGlobMin(Data.cf_refined_surf_data.(Tag_surface),...
-                Tag_scatter);
+            if ~isempty(surf_object)
+                data.X = surf_object.XData;
+                data.Y = surf_object.YData;
+                data.Z = surf_object.ZData;
+
+                % procedure
+                if ~isfield(Data.cf_surf_data.(Tag_surface), 'minimum_coordinates_handle')
+                    [GlobMin, GlobMin_handle] = UtilityFunctions.plotGlobMin(data,...
+                        Tag_scatter);
+                    GlobMin_handle.DeleteFcn = @Callbacks.DeleteMinimumCoordinates;
+                else
+                    assignin('base', 'Data', Data);
+                    return
+                end
+            else
+                assignin('base', 'Data', Data);
+                return
+            end
             
             %output
+            Data.cf_surf_data.(Tag_surface).minimum_coordinates_handle = GlobMin_handle;
             Data.cf_surf_data.(Tag_surface).minimum_coordinates = GlobMin;
             assignin('base', 'Data', Data);
             
@@ -921,6 +947,31 @@ classdef Callbacks
             assignin('base', 'Data', Data);
             
         end % CostFunctionRangeEditCallback
+        
+        function CostFunctionRefinementCallback(~, ~)
+        end % CostFunctionRefinementCallback
+        
+        function DeleteMinimumCoordinates(src, ~)
+            % DELETESMINIMUMCOORDINATES delets the minimum coordinates from
+            % the Data-struct in the workspace, if they were deleted from
+            % the axes
+            
+            % input
+            Data = evalin('base', 'Data');
+            
+            % procedure
+            ax = src.Parent;
+            fig = ax.Parent;
+            surf = findobj(fig, 'Type', 'surface');
+            fields = {'minimum_coordinates', 'minimum_coordinates_handle'};
+            
+            delete(Data.cf_surf_data.(surf.Tag).minimum_coordinates_handle)
+            Data.cf_surf_data.(surf.Tag) = rmfield(Data.cf_surf_data.(surf.Tag), fields);
+            
+            % output
+            assignin('base', 'Data', Data);
+            
+        end % DeleteMinimumCoordinates
         
     end
     

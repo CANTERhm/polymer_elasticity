@@ -256,7 +256,7 @@ classdef UtilityFunctions
             varOut = struct('X',surfx,'Y',surfy,'Z',J);
         end % updateSurf
         
-        function GlobMinCoords = plotGlobMin(values, Tag)
+        function varargout = plotGlobMin(values, Tag)
             % PLOTGLOBMIN plots the minimum of the global minimum into the
             % surface plot of the cost function
             %
@@ -267,6 +267,8 @@ classdef UtilityFunctions
             %   
             %   output:
             %       - GlobMinCoords: coordinates of the global minimum
+            %       - min_coords_handle: Handle to the scatter object
+            %       representing the minimum coordinates
             
             [MinDim1, ind_y] = min(values.Z,[],1);
             [GlobMin,ind_x] = min(MinDim1,[],2);
@@ -277,7 +279,7 @@ classdef UtilityFunctions
 
             if isempty(scatter_handle)
                 hold on
-                scatter3(ax,values.X(ind_x), values.Y(ind_y), GlobMin, 'rx',...
+                s = scatter3(ax,values.X(ind_x), values.Y(ind_y), GlobMin, 'rx',...
                     'LineWidth', 2,...
                     'SizeData', 200,...
                     'Tag', Tag);
@@ -289,6 +291,10 @@ classdef UtilityFunctions
             end
 
             GlobMinCoords = [values.X(ind_x) values.Y(ind_y) GlobMin];
+            min_coords_handle = s;
+            varargout{1} = GlobMinCoords;
+            varargout{2} = min_coords_handle;
+            
         end % plotGlobMin
         
         function rand_value = RandomValue(value, range)

@@ -351,6 +351,8 @@ Gui_Elements.slide_panel_cf_calc_cost_func_btn = calc_cost_func_btn;
 Gui_Elements.slide_panel_extended_width = extended_width;
 Gui_Elements.slide_panel_shrinked_width = shrinked_width;
 
+Gui_Elements.cf_data_brush = [];
+
 %% create Data 
 Data.A_bl_range = [];
 Data.orig_line_object = orig_line_object;
@@ -363,14 +365,15 @@ Data.xoffset = [];
 Data.yoffset = [];
 Data.brushed_data = [];
 Data.borders_from_table = false;
+
 Data.FR_left_border = [];
 Data.FR_right_border = [];
+
 Data.cf_plotnumber = 1;
 Data.cf_parameter_range = [0 2; 0 2; 0 2];
 Data.cf_surf_object = [];
 Data.cf_surf_data = [];
-Data.cf_refined_surf_object = [];
-Data.cf_refined_surf_data = [];
+
 Data.parameter.variable_parameter = vary_parameter;
 Data.parameter.constant_parameter = constant_parameter;
 Data.parameter.hold_parameter = hold_parameter;
