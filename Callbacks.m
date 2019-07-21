@@ -160,7 +160,8 @@ classdef Callbacks
             
             % surface plot overview
             [J, surfx, surfy] = UtilityFunctions.DoCalculation(cwave, weg, kraft, 100, range);
-            surf_object = UtilityFunctions.DoSurf(surfx, surfy, J, Name1, Tag_figure1, []);
+            [surf_object, surf_figure] = UtilityFunctions.DoSurf(surfx, surfy, J, Name1, Tag_figure1, []);
+            surf_figure.DeleteFcn = @Callbacks.DeleteCostFunctionFigure;
             
             % create a context menu for the cost function refinement
             if isempty(surf_object.UIContextMenu)
@@ -972,6 +973,25 @@ classdef Callbacks
             assignin('base', 'Data', Data);
             
         end % DeleteMinimumCoordinates
+        
+        function DeleteCostFunctionFigure(src, ~)
+            % DELETECOSTFUNCTIONFIGURE Callback for the correct deletion
+            % of the cost function properties out of the data-object if the
+            % cost function figure has been closed
+
+            % input
+            Data = evalin('base', 'Data');
+            
+            % procedure
+            ax = src.Children;
+            surf = findobj(ax, 'Type', 'surface');
+            Data.cf_surf_data = rmfield(Data.cf_surf_data, surf.Tag);
+            Data.cf_surf_object = rmfield(Data.cf_surf_object, surf.Tag);
+            
+            % output
+            assignin('base', 'Data', Data);
+            
+        end % DeleteCostFunctionFigure
         
     end
     

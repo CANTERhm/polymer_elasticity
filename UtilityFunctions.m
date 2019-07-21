@@ -93,7 +93,7 @@ classdef UtilityFunctions
 
         end % DoCalculation
         
-        function surface = DoSurf(surfx, surfy, J, Name, Tag, cdata)
+        function varargout = DoSurf(surfx, surfy, J, Name, Tag, cdata)
             % DOSURF Implements the surface plot for the Cost Function
             %
             %   input:
@@ -106,6 +106,8 @@ classdef UtilityFunctions
             %
             %   output:
             %       - surface: handle to the created surface-plot
+            %       - figure: handle to the figure which had been created
+            %       for the surface plot
             
             % assing values from Workspace
             Data = evalin('base', 'Data');
@@ -146,10 +148,13 @@ classdef UtilityFunctions
                 if ~isempty(cdata)
                     s.CData = cdata;
                 end
+                ax = s.Parent;
+                fig = ax.Parent;
             end
             
             %create output
-            surface = s;
+            varargout{1} = s;
+            varargout{2} = fig;
             
         end % DoSurf
         

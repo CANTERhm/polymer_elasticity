@@ -133,9 +133,9 @@ new_fitrange_btn = uicontrol(btn_box, 'Style', 'pushbutton',...
     'Callback', @Callbacks.new_fitrange_btn_callback);
 
 %% gui settings
-base.Heights = [-3.5 -1];
+base.Heights = [-3 -1];
 base.Padding = 5;
-control_box.Heights = [20 -1 -1];
+control_box.Heights = [30 -1 -1];
 control_box.Spacing = 10;
 axes_box.Padding = 0;
 axes_box.Spacing = 0;
