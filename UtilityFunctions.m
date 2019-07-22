@@ -230,32 +230,56 @@ classdef UtilityFunctions
             %           - varOut.X: X-values for the surface plot
             %           - varOut.Y: Y-values for the surface plot
             %           - varOut.Z: Z-values for the surface plot
+            
+            % assign values from workspace
+            Data = evalin('base', 'Data');
+            hold_Ks = Data.parameter.hold_parameter.cf_Ks;
+            hold_Lc = Data.parameter.hold_parameter.cf_Lc;
+            hold_lk = Data.parameter.hold_parameter.cf_lk;
+            hold = [hold_Ks; hold_Lc; hold_lk];
+            
+            % determine which parameter represent the x- and y-axis of the
+            % surface plot; the third one will be kept constant
+            choice = {'cf_Ks'; 'cf_Lc'; 'cf_lk'};
+            constant = choice(hold); 
 
+            % create variable necessary for the surface plot
+            kb = cwave(4,1);
+            T  = cwave(5,1);
             var2 = size(var,1)/3;
             var3 = reshape(var', size(var,2), var2, []);
             X = var3(:,:,1)';
             Y = var3(:,:,2)';
             Z = var3(:,:,3)';
-            XInter = linspace(min(X(1,:)), max(X(1,:)), fitNum);
-            YInter = linspace(min(Y(:,1)), max(Y(:,1)), fitNum);
-            Lc = cwave(2,1);
-            kb = cwave(4,1);
-            T  = cwave(5,1);
+            p1 = linspace(min(X(1,:)), max(X(1,:)), fitNum)';
+            p2 = linspace(min(Y(:,1)), max(Y(:,1)), fitNum)';
+            p_const = ones(length(p1)^2, 1).*Data.parameter.variable_parameter.(constant{:});
 
             % recalculate
-            h = @(x,Ks,lk)Lc.*(coth(x.*lk./(kb*T))-kb*T./(x.*lk)).*(1+x./(Ks*lk));
-            p1 = XInter;
-            p2 = YInter;
+            h = @(x,Ks,Lc,lk)Lc.*(coth(x.*lk./(kb*T))-kb*T./(x.*lk)).*(1+x./(Ks*lk));
             [X,Y] = meshgrid(p1,p2);
             p = cat(2, X, Y);
             p = reshape(p,[],2);
 
-            % Berechne Costfunction für ein Parameterpärchen (Ks, lk) und füge sie
+            % Berechne Costfunction für ein Parameterpärchen und füge sie
             % der Matrix p hinzu
-            for i = 1:1:length(p)
-                model = h(xwave,p(i,1),p(i,2));
-                p(i,3) = (1/(2*length(xwave)))*((model-ywave)'*(model-ywave));
-            end 
+            switch constant{:}
+                case 'cf_Ks'
+                    for i = 1:1:length(p)
+                        model = h(xwave,p_const(i,1),p(i,1),p(i,2));
+                        p(i,3) = (1/(2*length(xwave)))*((model-ywave)'*(model-ywave));
+                    end
+                case 'cf_Lc'
+                    for i = 1:1:length(p)
+                        model = h(xwave,p(i,1),p_const(i,1),p(i,2));
+                        p(i,3) = (1/(2*length(xwave)))*((model-ywave)'*(model-ywave));
+                    end
+                case 'cf_lk'
+                    for i = 1:1:length(p)
+                        model = h(xwave,p(i,1),p(i,2),p_const(i,1));
+                        p(i,3) = (1/(2*length(xwave)))*((model-ywave)'*(model-ywave));
+                    end
+            end
 
             J = reshape(p(:,3),length(p1),length(p2));
             surfx = p1;

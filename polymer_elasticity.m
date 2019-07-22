@@ -254,7 +254,7 @@ cost_function_range_data = {'Ks', 0, 2;...
 
 cf_parameter_range_table = uitable(cf_parameter_range_container);
 cf_parameter_range_table.RowName = {};
-cf_parameter_range_table.ColumnName = {'Parameter', 'Lower Bound [%]', 'Upper Bound [%]'};
+cf_parameter_range_table.ColumnName = {'Parameter', 'Lower Bound [a.u.]', 'Upper Bound [a.u.]'};
 cf_parameter_range_table.Data = cost_function_range_data;
 cf_parameter_range_table.ColumnEditable = [false true true];
 cf_parameter_range_table.CellEditCallback = @Callbacks.CostFunctionRangeEditCallback;
