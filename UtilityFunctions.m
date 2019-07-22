@@ -130,15 +130,25 @@ classdef UtilityFunctions
                 ax.XLabel.String = labels{1, 1};
                 ax.YLabel.String = labels{2, 1};
                 ax.ZLabel.String = 'Costfunction';
+                
+                ax.XAxis.FontSize = 30;
+                ax.XAxis.Label.FontSize = 30;
+                ax.XAxis.LineWidth = 0.5;
+                
+                ax.YAxis.FontSize = 30;
+                ax.YAxis.Label.FontSize = 30;
+                ax.YAxis.LineWidth = 0.5;
 
                 s.FaceColor = 'interp';
                 s.FaceLighting = 'gouraud';
+                s.EdgeColor = 'black';
                 s.Tag = Tag;
                 s.DisplayName = Name;
                 if ~isempty(cdata)
                     s.CData = cdata;
                 end
-                colorbar;
+                cb = colorbar;
+                cb.FontSize = 30;
                 colormap Jet;
                 plottools;
             else
@@ -151,6 +161,15 @@ classdef UtilityFunctions
                 ax = s.Parent;
                 fig = ax.Parent;
             end
+            
+            % tight layout
+            outerpos = ax.OuterPosition;
+            ti = ax.TightInset; 
+            left = outerpos(1) + ti(1);
+            bottom = outerpos(2) + ti(2);
+            ax_width = outerpos(3) - ti(1) - ti(3);
+            ax_height = outerpos(4) - ti(2) - ti(4);
+            ax.Position = [left bottom ax_width ax_height];
             
             %create output
             varargout{1} = s;

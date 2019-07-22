@@ -146,8 +146,6 @@ classdef Callbacks
             DataSelection = evalin('base', 'DataSelection');
             
             % procedure
-            plotNumber = Data.cf_plotnumber;
-            fitNum = Data.cf_fitnum;
             cwave = [Data.parameter.variable_parameter.cf_Ks;...
                 Data.parameter.variable_parameter.cf_Lc;...
                 Data.parameter.variable_parameter.cf_lk;...
@@ -156,6 +154,9 @@ classdef Callbacks
             range = Data.cf_parameter_range;
             kraft = -DataSelection(:,2);
             weg = DataSelection(:,1);
+            
+            plotNumber = Data.cf_plotnumber;
+            fitNum = Data.cf_fitnum;
             Name1 = ['Costfunction' num2str(plotNumber)];
             Tag_figure1 = ['costfunction' num2str(plotNumber)];
             
@@ -1028,6 +1029,11 @@ classdef Callbacks
                 surf_object_zoomed.UIContextMenu = cm;
                 uimenu(cm, 'Label', 'Plot Minimum Coordinates', 'Callback', @Callbacks.PlotMinimumCoordinates);
             end
+            
+            % create a data brush-object for cost function
+            h = brush(surf_figure_zoomed);
+            h.Enable = 'off';
+            h.ActionPostCallback = @Callbacks.CostFunctionROIProcessingCallback;
             
             % output
             Data.cf_surf_object.(Tag_figure1) = surf_object_zoomed;
