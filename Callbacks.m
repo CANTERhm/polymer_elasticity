@@ -147,9 +147,10 @@ classdef Callbacks
             
             % procedure
             plotNumber = Data.cf_plotnumber;
-            cwave = [Data.parameter.variable_parameter.Ks;...
-                Data.parameter.variable_parameter.Lc;...
-                Data.parameter.variable_parameter.lk;...
+            fitNum = Data.cf_fitnum;
+            cwave = [Data.parameter.variable_parameter.cf_Ks;...
+                Data.parameter.variable_parameter.cf_Lc;...
+                Data.parameter.variable_parameter.cf_lk;...
                 Data.parameter.constant_parameter.kb;...
                 Data.parameter.constant_parameter.T];
             range = Data.cf_parameter_range;
@@ -159,7 +160,7 @@ classdef Callbacks
             Tag_figure1 = ['costfunction' num2str(plotNumber)];
             
             % surface plot overview
-            [J, surfx, surfy] = UtilityFunctions.DoCalculation(cwave, weg, kraft, 100, range);
+            [J, surfx, surfy] = UtilityFunctions.DoCalculation(cwave, weg, kraft, fitNum, range);
             [surf_object, surf_figure] = UtilityFunctions.DoSurf(surfx, surfy, J, Name1, Tag_figure1, []);
             surf_figure.DeleteFcn = @Callbacks.DeleteCostFunctionFigure;
             
@@ -167,7 +168,6 @@ classdef Callbacks
             if isempty(surf_object.UIContextMenu)
                 cm = uicontextmenu;
                 surf_object.UIContextMenu = cm;
-                uimenu(cm, 'Label', 'Cost Function Refinment', 'Callback', @Callbacks.CostFunctionRefinement);
                 uimenu(cm, 'Label', 'Plot Minimum Coordinates', 'Callback', @Callbacks.PlotMinimumCoordinates);
             end
             
@@ -176,7 +176,7 @@ classdef Callbacks
             fig = ax.Parent;
             h = brush(fig);
             h.Enable = 'off';
-            h.ActionPostCallback = @Callbacks.CostFunctionRefinementCallback;
+            h.ActionPostCallback = @Callbacks.CostFunctionROIProcessingCallback;
             
             % output
             Data.cf_surf_object.(Tag_figure1) = surf_object;
@@ -379,10 +379,6 @@ classdef Callbacks
             end
             
         end % SaveFigure
-        
-        function CostFunctionRefinement(~, ~)
-        end % CostFunctionRefinement
-        
         function PlotMinimumCoordinates(~, ~)
             % input
             Data = evalin('base', 'Data');
@@ -875,10 +871,33 @@ classdef Callbacks
             assignin('base', 'Data', Data);
         end % EditPlotNumberCallback
         
+        function EditFitNumCallback(src, ~)
+            % EIDTFITNUMCALLBACK writes valid parameter-values for
+            % cf_fitnum-property to Data
+            
+            % input
+            Data = evalin('base', 'Data');
+            
+            % new value assignment
+            old_value = num2str(Data.cf_fitnum);
+            new_value = str2double(src.String);
+            if ~isnan(new_value)
+                Data.cf_fitnum = new_value;
+            else
+                src.String = old_value;
+            end
+            
+            % output
+            assignin('base', 'Data', Data);
+            
+        end % EditFitNumCallback
+        
         function CostFunctionHoldParameterCallback(src, evt)
             % COSTFUNCTIONHOLDPARAMETERCALLBACK Ensures, that only one
             % Checkbox for the Hold-Column in the Cost Function Parameter
-            % Table can be checked.
+            % Table can be checked. It also writes valid parmeter values to
+            % the cf_Ks, cf_Lc and cf_lk properties of
+            % Data.parameter.variable_parameter
             
             %input
             Data = evalin('base', 'Data');
@@ -930,7 +949,7 @@ classdef Callbacks
         
         function CostFunctionRangeEditCallback(~, evt)
             % COSTFUNCTIONRANGEEDITCALLBACK Writes valid range-values for
-            % the Cost Function into the Data.cf_range-property
+            % the Cost Function into the Data.cf_range-property 
             
             % input
             Data = evalin('base', 'Data');
@@ -949,7 +968,74 @@ classdef Callbacks
             
         end % CostFunctionRangeEditCallback
         
-        function CostFunctionRefinementCallback(~, ~)
+        function CostFunctionROIProcessingCallback(src, ~)
+            % COSTFUNCTIONROIPROCESSINGCALLBACK processing the
+            % ActionsPostCallback of the data brush linked to the surface
+            % plot of the cost function
+            
+            % input
+            Data = evalin('base', 'Data');
+            DS = evalin('base', 'DataSelection');
+            
+            % procedure
+            plotNumber = Data.cf_plotnumber;
+            fitNum = Data.cf_fitnum;
+            cwave = [Data.parameter.variable_parameter.cf_Ks;...
+                Data.parameter.variable_parameter.cf_Lc;...
+                Data.parameter.variable_parameter.cf_lk;...
+                Data.parameter.constant_parameter.kb;...
+                Data.parameter.constant_parameter.T];
+            kraft = -DS(:,2);
+            weg = DS(:,1);
+            Name1 = ['Costfunction' num2str(plotNumber) '_zoomed'];
+            Tag_figure1 = ['costfunction' num2str(plotNumber) '_zoomed'];
+            ax = src.Children;
+            surf = findobj(ax, 'type', 'surface');
+            
+            try
+                brushed = surf.BrushData;
+            catch ME % if you can
+                switch ME.identifier
+                    case 'MATLAB:class:InvalidHandle'
+                        % orig_line_object has been deleted
+                        return
+                end
+            end
+            
+            % process the region of interest
+            mask = logical(brushed);
+            [X,Y] = meshgrid(surf.XData,surf.YData);
+            roi_x = CropMatrix(X, mask);
+            roi_y = CropMatrix(Y, mask);
+            roi_z = CropMatrix(surf.ZData, mask);
+            roi = cat(1,roi_x,roi_y,roi_z);
+            roi = UtilityFunctions.updateSurf(roi, cwave, weg, kraft, fitNum);
+            
+            % calculate new z-data-ranges for the surface plot, in order to
+            % adjust the colorbar
+            CData = roi.Z;
+            maxZ = max(max(roi.Z)) - 0.1*max(max(roi.Z));
+            mask = (roi.Z >= maxZ);
+            CData(mask) = maxZ;
+            
+            % recalculate surface plot
+            [surf_object_zoomed, surf_figure_zoomed] = UtilityFunctions.DoSurf(roi.X, roi.Y, roi.Z, Name1, Tag_figure1, CData);
+            surf_figure_zoomed.DeleteFcn = @Callbacks.DeleteCostFunctionFigure;
+            
+            % create a context menu for the cost function refinement
+            if isempty(surf_object_zoomed.UIContextMenu)
+                cm = uicontextmenu;
+                surf_object_zoomed.UIContextMenu = cm;
+                uimenu(cm, 'Label', 'Plot Minimum Coordinates', 'Callback', @Callbacks.PlotMinimumCoordinates);
+            end
+            
+            % output
+            Data.cf_surf_object.(Tag_figure1) = surf_object_zoomed;
+            Data.cf_surf_data.(Tag_figure1).X = roi.X';
+            Data.cf_surf_data.(Tag_figure1).Y = roi.Y';
+            Data.cf_surf_data.(Tag_figure1).Z = roi.Z;
+            assignin('base', 'Data', Data);
+            
         end % CostFunctionRefinementCallback
         
         function DeleteMinimumCoordinates(src, ~)
@@ -966,8 +1052,11 @@ classdef Callbacks
             surf = findobj(fig, 'Type', 'surface');
             fields = {'minimum_coordinates', 'minimum_coordinates_handle'};
             
-            delete(Data.cf_surf_data.(surf.Tag).minimum_coordinates_handle)
-            Data.cf_surf_data.(surf.Tag) = rmfield(Data.cf_surf_data.(surf.Tag), fields);
+            try
+                delete(Data.cf_surf_data.(surf.Tag).minimum_coordinates_handle)
+                Data.cf_surf_data.(surf.Tag) = rmfield(Data.cf_surf_data.(surf.Tag), fields);
+            catch
+            end
             
             % output
             assignin('base', 'Data', Data);
@@ -985,8 +1074,14 @@ classdef Callbacks
             % procedure
             ax = src.Children;
             surf = findobj(ax, 'Type', 'surface');
-            Data.cf_surf_data = rmfield(Data.cf_surf_data, surf.Tag);
-            Data.cf_surf_object = rmfield(Data.cf_surf_object, surf.Tag);
+            try
+                Data.cf_surf_data = rmfield(Data.cf_surf_data, surf.Tag);
+            catch
+            end
+            try
+                Data.cf_surf_object = rmfield(Data.cf_surf_object, surf.Tag);
+            catch
+            end
             
             % output
             assignin('base', 'Data', Data);

@@ -194,9 +194,12 @@ classdef UtilityFunctions
                 lk_lin = linspace(range(1,1)*cwave(3,1),range(1,2)*cwave(3,1), fitNum)';
                 vals = [Ks_lin, Lc_lin, lk_lin, kb, T];
             elseif rs(1,1) == 3 && rs(1,2) == 2
-                Ks_lin = linspace(range(1,1)*cwave(1,1), range(1,2)*cwave(1,1), fitNum)';
-                Lc_lin = linspace(range(2,1)*cwave(2,1), range(2,2)*cwave(2,1), fitNum)';
-                lk_lin = linspace(range(3,1)*cwave(3,1), range(3,2)*cwave(3,1), fitNum)';
+                Ks_lin = linspace(range(1,1), range(1,2), fitNum)';
+                Lc_lin = linspace(range(2,1), range(2,2), fitNum)';
+                lk_lin = linspace(range(3,1), range(3,2), fitNum)';
+%                 Ks_lin = linspace(range(1,1)*cwave(1,1), range(1,2)*cwave(1,1), fitNum)';
+%                 Lc_lin = linspace(range(2,1)*cwave(2,1), range(2,2)*cwave(2,1), fitNum)';
+%                 lk_lin = linspace(range(3,1)*cwave(3,1), range(3,2)*cwave(3,1), fitNum)';
                 vals = [Ks_lin, Lc_lin, lk_lin, kb, T];
             else
                 ME = MException('InitialValues:invalidParameter',...

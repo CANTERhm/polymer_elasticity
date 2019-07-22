@@ -231,6 +231,7 @@ cf_range_panel = uix.BoxPanel('Parent', cf_container, 'Title', 'Cost Function Pa
 cf_parameter_container = uix.VBox('Parent',cf_panel);
 cf_parameter_range_container = uix.VBox('Parent', cf_range_panel);
 cf_edit_field_container = uix.HButtonBox('Parent', cf_container);
+cf_fitnum_edit_field_container = uix.HButtonBox('Parent', cf_container);
 cf_button_container = uix.HButtonBox('Parent', cf_container);
 
 % content of cost function parameter table
@@ -269,6 +270,17 @@ cf_plotnumber_edit = uicontrol('Parent', cf_edit_field_container, 'Style', 'edit
     'String', '1',...
     'Callback', @Callbacks.EditPlotNumberCallback);
 
+% fit number edit field
+cf_fitnum_edit_field_container.HorizontalAlignment = 'right';
+cf_fitnum_edit_field_container.VerticalAlignment = 'middle';
+cf_fitnum_edit_field_container.ButtonSize = [150 20];
+
+cf_fitnum_text = uicontrol('Parent', cf_fitnum_edit_field_container, 'Style', 'text',...
+    'String', ' Resolution/Axis:');
+cf_fitnum_edit = uicontrol('Parent', cf_fitnum_edit_field_container, 'Style', 'edit',...
+    'String', '100',...
+    'Callback', @Callbacks.EditFitNumCallback);
+
 % configuration of calculata cost function button
 cf_button_container.HorizontalAlignment = 'right';
 cf_button_container.VerticalAlignment = 'middle';
@@ -278,7 +290,7 @@ calc_cost_func_btn = uicontrol('Parent', cf_button_container, 'Style', 'pushbutt
     'Callback', @Callbacks.calculate_costfunction_btn_callback);
 
 % configuration of cf_container
-cf_container.Heights = [-1 -1 25 25];
+cf_container.Heights = [-1 -1 25 25 25];
 
 %% settings of slide-panel
 extended_width = 400;
@@ -373,6 +385,7 @@ Data.cf_plotnumber = 1;
 Data.cf_parameter_range = [0 2; 0 2; 0 2];
 Data.cf_surf_object = [];
 Data.cf_surf_data = [];
+Data.cf_fitnum = 100;
 
 Data.parameter.variable_parameter = vary_parameter;
 Data.parameter.constant_parameter = constant_parameter;
