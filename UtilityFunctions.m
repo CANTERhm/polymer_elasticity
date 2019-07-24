@@ -130,14 +130,8 @@ classdef UtilityFunctions
                 ax.XLabel.String = labels{1, 1};
                 ax.YLabel.String = labels{2, 1};
                 ax.ZLabel.String = 'Costfunction';
-                
-                ax.XAxis.FontSize = 30;
-                ax.XAxis.Label.FontSize = 30;
-                ax.XAxis.LineWidth = 0.5;
-                
-                ax.YAxis.FontSize = 30;
-                ax.YAxis.Label.FontSize = 30;
-                ax.YAxis.LineWidth = 0.5;
+                ax.View = [0 90];
+                ax.SortMethod = 'childorder';
 
                 s.FaceColor = 'interp';
                 s.FaceLighting = 'gouraud';
@@ -147,8 +141,7 @@ classdef UtilityFunctions
                 if ~isempty(cdata)
                     s.CData = cdata;
                 end
-                cb = colorbar;
-                cb.FontSize = 30;
+                colorbar;
                 colormap Jet;
                 plottools;
             else
@@ -162,14 +155,13 @@ classdef UtilityFunctions
                 fig = ax.Parent;
             end
             
-            % tight layout
-            outerpos = ax.OuterPosition;
-            ti = ax.TightInset; 
-            left = outerpos(1) + ti(1);
-            bottom = outerpos(2) + ti(2);
-            ax_width = outerpos(3) - ti(1) - ti(3);
-            ax_height = outerpos(4) - ti(2) - ti(4);
-            ax.Position = [left bottom ax_width ax_height];
+            % create the contextmenu for surface polt figures
+            if isempty(s.UIContextMenu)
+                cm = uicontextmenu;
+                s.UIContextMenu = cm;
+                uimenu(cm, 'Label', 'Plot Minimum Coordinates', 'Callback', @Callbacks.PlotMinimumCoordinates);
+                uimenu(cm, 'Label', 'Save Figure', 'Callback', @Callbacks.SaveCostFunctionFigure);
+            end
             
             %create output
             varargout{1} = s;
@@ -269,7 +261,6 @@ classdef UtilityFunctions
             var3 = reshape(var', size(var,2), var2, []);
             X = var3(:,:,1)';
             Y = var3(:,:,2)';
-            Z = var3(:,:,3)';
             p1 = linspace(min(X(1,:)), max(X(1,:)), fitNum)';
             p2 = linspace(min(Y(:,1)), max(Y(:,1)), fitNum)';
             p_const = ones(length(p1)^2, 1).*Data.parameter.variable_parameter.(constant{:});
@@ -335,6 +326,11 @@ classdef UtilityFunctions
                     'SizeData', 200,...
                     'Tag', Tag);
                 hold off
+                
+                % context menu for showing the coordinates in the figue
+                cm = uicontextmenu;
+                s.UIContextMenu = cm;
+                uimenu(cm, 'Label', 'Show Coordinates', 'Callback', @Callbacks.CostFunctionShowMinimumCoordinates);
             else
                 scatter_handle.XData = values.X(ind_x);
                 scatter_handle.YData = values.Y(ind_y);

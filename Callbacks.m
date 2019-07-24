@@ -165,13 +165,6 @@ classdef Callbacks
             [surf_object, surf_figure] = UtilityFunctions.DoSurf(surfx, surfy, J, Name1, Tag_figure1, []);
             surf_figure.DeleteFcn = @Callbacks.DeleteCostFunctionFigure;
             
-            % create a context menu for the cost function refinement
-            if isempty(surf_object.UIContextMenu)
-                cm = uicontextmenu;
-                surf_object.UIContextMenu = cm;
-                uimenu(cm, 'Label', 'Plot Minimum Coordinates', 'Callback', @Callbacks.PlotMinimumCoordinates);
-            end
-            
             % create a data brush-object for cost function
             ax = surf_object.Parent;
             fig = ax.Parent;
@@ -380,7 +373,38 @@ classdef Callbacks
             end
             
         end % SaveFigure
+        
+        function SaveCostFunctionFigure(src, evt)
+            % SAVECOSTFUNCTIONFIGURE creates an new figure of one of the
+            % costfunction plots in a printable form
+%             
+%             fig = gcf();
+%             save('temp');
+%             ax = findobj(fig, 'type', 'axes');
+%             surf = findobj(ax, 'type', 'surface');
+%             coords = findobj(ax, 'type', 'scatter');
+%             coords_annotation = findobj(ax, 'type', 'text');
+%             
+%             % create new figure 
+%             new_fig = figure('NumberTitle', 'off', 'Name', 'Save Figure', 'Color', 'white');
+%             new_ax = axes(new_fig);
+%             new_ax.NextPlot = 'add';
+%             
+%             % fill new figure with elements of the original
+%             if ~isempty(surf)
+%                 surf2 = surf;
+%                 surf2.Parent = new_ax;
+%             end
+%             if ~isempty(coords)
+%                 coords.Parent = new_ax;
+%             end
+            
+        end % SaveCostFunctionFigure
+        
         function PlotMinimumCoordinates(~, ~)
+            % PLOTMINIMUMCOORDINATES plots an marker at the coordinates of
+            % the minimum into the actual surface plot
+            
             % input
             Data = evalin('base', 'Data');
             plotnumber = Data.cf_plotnumber;
@@ -414,6 +438,52 @@ classdef Callbacks
             assignin('base', 'Data', Data);
             
         end % PlotMinimumCoordinates
+        
+        function CostFunctionShowMinimumCoordinates(~, ~)
+            % COSTFUNCTIONSHOWMINIMUMCOORDINATES plot the Coordinates of
+            % the minimum of the costfunction in an textbox
+            % next to the marker location
+            
+            % input from workspace
+            Data = evalin('base', 'Data');
+            
+            fig = gcf();
+            surf = findobj(fig, 'type', 'surface');
+            
+            if ~isempty(surf)
+                tag = surf.Tag;
+                if isfield(Data.cf_surf_data, tag)
+                    if isfield(Data.cf_surf_data.(tag), 'minimum_coordinates')
+                        coords = Data.cf_surf_data.costfunction1.minimum_coordinates;
+                        t_x = coords(1);
+                        t_y = coords(2);
+                        t_z = coords(3);
+                        label = sprintf('%s: \t %d \n%s: \t %d \n%s: \t %d',...
+                            'X', t_x,...
+                            'Y', t_y,...
+                            'Z', t_z);
+                        t = text(t_x, t_y, label);
+                        t.Tag = tag;
+                        t.EdgeColor = 'black';
+                        t.BackgroundColor = 'yellow';
+                        t.DeleteFcn = @Callbacks.DeleteMinimumCoordinatesAnnotation;
+                        
+                        % place the annotation to a nice position
+                        pos = t.Extent;
+                        new_x = t_x + pos(3)/4;
+                        new_y = t_y + pos(4);
+                        t.Position = [new_x new_y];
+                        
+                        % assign to Data-struct
+                        Data.cf_surf_data.(tag).minimum_coordinates_annotation = t;
+                    end
+                end
+            end
+            
+            % output to workspace
+            assignin('base', 'Data', Data);
+            
+        end % CostFunctionShowMinimumCoordinates
         
     end
     
@@ -1056,11 +1126,27 @@ classdef Callbacks
             ax = src.Parent;
             fig = ax.Parent;
             surf = findobj(fig, 'Type', 'surface');
-            fields = {'minimum_coordinates', 'minimum_coordinates_handle'};
+            fields = {'minimum_coordinates',...
+                'minimum_coordinates_handle'};
             
             try
                 delete(Data.cf_surf_data.(surf.Tag).minimum_coordinates_handle)
+            catch
+            end
+            try
                 Data.cf_surf_data.(surf.Tag) = rmfield(Data.cf_surf_data.(surf.Tag), fields);
+            catch
+            end
+            
+            % try also to delete the coordinate annotation and remove it
+            % form the data-sturct, if it exists
+            try
+                delete(Data.cf_surf_data.(surf.Tag).minimum_coordinates_annotation);
+            catch
+            end
+            try
+                Data.cf_surf_data.(surf.Tag) = rmfield(Data.cf_surf_data.(surf.Tag),...
+                    'minimum_coordinates_annotation');
             catch
             end
             
@@ -1068,6 +1154,24 @@ classdef Callbacks
             assignin('base', 'Data', Data);
             
         end % DeleteMinimumCoordinates
+        
+        function DeleteMinimumCoordinatesAnnotation(src, ~)
+            % DELETEMINIMUMCOORDIANTESANNOTATION if the minimum coordinates
+            % annotation had been deleted, the handle has to be deleted
+            % from the Data.cf_surf_data.(obj_tag) structure
+            
+            % input from workspace
+            Data = evalin('base', 'Data');
+            
+            try
+                Data.cf_surf_data.(src.Tag) = rmfield(Data.cf_surf_data.(src.Tag), 'minimum_coordinates_annotation');
+            catch
+            end
+            
+            % output to workspace
+            assignin('base', 'Data', Data);
+            
+        end % DeleteMinimumCoordinatesAnnotation
         
         function DeleteCostFunctionFigure(src, ~)
             % DELETECOSTFUNCTIONFIGURE Callback for the correct deletion
