@@ -378,27 +378,55 @@ classdef Callbacks
             % SAVECOSTFUNCTIONFIGURE creates an new figure of one of the
             % costfunction plots in a printable form
             
-            fig = gcf();
-            save('temp');
-%             ax = findobj(fig, 'type', 'axes');
-%             surf = findobj(ax, 'type', 'surface');
-%             coords = findobj(ax, 'type', 'scatter');
-%             coords_annotation = findobj(ax, 'type', 'text');
-%             
-%             % create new figure 
-%             new_fig = figure('NumberTitle', 'off', 'Name', 'Save Figure', 'Color', 'white');
-%             new_ax = axes(new_fig);
-%             new_ax.NextPlot = 'add';
-%             
-%             % fill new figure with elements of the original
-%             if ~isempty(surf)
-%                 surf2 = surf;
-%                 surf2.Parent = new_ax;
-%             end
-%             if ~isempty(coords)
-%                 coords.Parent = new_ax;
-%             end
+            costfunction = gcf();
             
+            % save and load fig, to get a deep copy of it
+            savefig(costfunction, 'temp/costfunction.fig');
+            costfunction = openfig('temp/costfunction.fig');
+            delete temp/*.fig
+            
+            costfunction.Name = 'Save Figure';
+            
+            % change interpreter and font size of axes elements
+            ax = findobj(costfunction, 'type', 'axes');
+            ax.TickLabelInterpreter = 'latex';
+            ax.XLimMode = 'auto';
+            old_label = ax.XAxis.Label.String;
+            new_label = ['$' old_label '$'];
+            ax.XAxis.Label.String = new_label;
+            ax.XAxis.FontSize = 30;
+            ax.XAxis.Label.FontSize = 30;
+            ax.XAxis.LineWidth = 0.5;
+            ax.XAxis.Label.Interpreter = 'latex';
+            
+            ax.YLimMode = 'auto';
+            old_label = ax.YAxis.Label.String;
+            new_label = ['$' old_label '$'];
+            ax.YAxis.Label.String = new_label;
+            ax.YAxis.FontSize = 30;
+            ax.YAxis.Label.FontSize = 30;
+            ax.YAxis.LineWidth = 0.5;
+            ax.YAxis.Label.Interpreter = 'latex';
+            
+            % change the interpreter- and FontSize-properties the coordinate
+            % location annotation, if it exists
+            coords = findobj(ax, 'type', 'text');
+            coords_scatter = findobj(ax, 'type', 'scatter');
+            if ~isempty(coords) && ~isempty(coords_scatter)
+                coords.String = sprintf('$%s: %d$ \n$%s: %d$ \n$%s: %d$',...
+                    'X', coords_scatter.XData,...
+                    'Y', coords_scatter.YData,...
+                    'Z', coords_scatter.ZData);
+                coords.Interpreter = 'latex';
+            end
+            
+            % change the colobar-properties, if it exists
+            cb = findobj(costfunction, 'type', 'colorbar');
+            if ~isempty(cb)
+                cb.FontSize = 30;
+                cb.TickLabelInterpreter = 'latex';
+            end
+
         end % SaveCostFunctionFigure
         
         function PlotMinimumCoordinates(~, ~)

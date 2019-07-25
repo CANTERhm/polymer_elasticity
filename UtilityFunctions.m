@@ -121,7 +121,7 @@ classdef UtilityFunctions
             labels = {'K_S / Nm^{-1}'; 'L_C / m'; 'l_K / m'};
             labels = labels(~hold); 
             
-            s = findobj(groot, 'Tag', Tag);
+            s = findobj(groot, 'Tag', Tag, 'type', 'surface');
             if isempty(s)
                 fig = figure('NumberTitle', 'off', 'Name', Name);
                 ax = axes(fig);
@@ -136,6 +136,7 @@ classdef UtilityFunctions
                 s.FaceColor = 'interp';
                 s.FaceLighting = 'gouraud';
                 s.EdgeColor = 'black';
+                s.EdgeAlpha = 0.5;
                 s.Tag = Tag;
                 s.DisplayName = Name;
                 if ~isempty(cdata)
@@ -317,7 +318,7 @@ classdef UtilityFunctions
             ind_y = ind_y(ind_x);
 
             ax = gca();
-            scatter_handle = findobj('Tag', 'global_minimum');
+            scatter_handle = findobj(ax, 'type', 'scatter');
 
             if isempty(scatter_handle)
                 hold on
@@ -335,6 +336,7 @@ classdef UtilityFunctions
                 scatter_handle.XData = values.X(ind_x);
                 scatter_handle.YData = values.Y(ind_y);
                 scatter_handle.ZData = GlobMin;
+                s = scatter_handle;
             end
 
             GlobMinCoords = [values.X(ind_x) values.Y(ind_y) GlobMin];
