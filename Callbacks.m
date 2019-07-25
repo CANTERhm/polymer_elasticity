@@ -374,12 +374,12 @@ classdef Callbacks
             
         end % SaveFigure
         
-        function SaveCostFunctionFigure(src, evt)
+        function SaveCostFunctionFigure(~, ~)
             % SAVECOSTFUNCTIONFIGURE creates an new figure of one of the
             % costfunction plots in a printable form
-%             
-%             fig = gcf();
-%             save('temp');
+            
+            fig = gcf();
+            save('temp');
 %             ax = findobj(fig, 'type', 'axes');
 %             surf = findobj(ax, 'type', 'surface');
 %             coords = findobj(ax, 'type', 'scatter');
