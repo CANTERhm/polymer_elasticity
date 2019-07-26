@@ -315,6 +315,9 @@ classdef Callbacks
             grid minor;
             plottools;
             
+            % avoid closing polymer_elasticity by Kraftkurven
+            fig.UserData.EditRequest = false;
+            
             % sizes of axes elements
             ax.XLimMode = 'auto';
             ax.XAxis.Label.String = 'Vertical Tip Position / m';
@@ -351,14 +354,14 @@ classdef Callbacks
                 hold(ax, 'off');
             end
             
-            % tight layout
-            outerpos = ax.OuterPosition;
-            ti = ax.TightInset; 
-            left = outerpos(1) + ti(1);
-            bottom = outerpos(2) + ti(2);
-            ax_width = outerpos(3) - ti(1) - ti(3);
-            ax_height = outerpos(4) - ti(2) - ti(4);
-            ax.Position = [left bottom ax_width ax_height];
+%             % tight layout
+%             outerpos = ax.OuterPosition;
+%             ti = ax.TightInset; 
+%             left = outerpos(1) + ti(1);
+%             bottom = outerpos(2) + ti(2);
+%             ax_width = outerpos(3) - ti(1) - ti(3);
+%             ax_height = outerpos(4) - ti(2) - ti(4);
+%             ax.Position = [left bottom ax_width ax_height];
             
             % mark data offsets and fit range
             if ~isempty(orig_line) && ~isempty(bl_range) && ...
@@ -390,6 +393,10 @@ classdef Callbacks
             delete temp/*.fig
             
             costfunction.Name = 'Save Figure';
+            costfunction.Color = 'white';
+            
+            % avoid closing polymer_elasticity by Kraftkurven
+            costfunction.UserData.EditRequest = false;
             
             % change interpreter and font size of axes elements
             ax = findobj(costfunction, 'type', 'axes');
@@ -486,7 +493,7 @@ classdef Callbacks
                 tag = surf.Tag;
                 if isfield(Data.cf_surf_data, tag)
                     if isfield(Data.cf_surf_data.(tag), 'minimum_coordinates')
-                        coords = Data.cf_surf_data.costfunction1.minimum_coordinates;
+                        coords = Data.cf_surf_data.(tag).minimum_coordinates;
                         t_x = coords(1);
                         t_y = coords(2);
                         t_z = coords(3);

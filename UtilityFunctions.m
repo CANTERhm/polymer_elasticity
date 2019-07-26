@@ -124,6 +124,10 @@ classdef UtilityFunctions
             s = findobj(groot, 'Tag', Tag, 'type', 'surface');
             if isempty(s)
                 fig = figure('NumberTitle', 'off', 'Name', Name);
+                
+                % avoid closing polymer_elasticity by Kraftkurven
+                fig.UserData.EditRequest = false;
+                
                 ax = axes(fig);
                 s = surf(ax, surfx, surfy, J, 'FaceAlpha', 1);
 
