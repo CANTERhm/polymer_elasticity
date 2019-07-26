@@ -549,12 +549,16 @@ classdef Callbacks
             ax.XAxis.FontSize = 30;
             ax.XAxis.Label.FontSize = 30;
             ax.XAxis.LineWidth = 0.5;
+            ax.XAxis.Label.Interpreter = 'latex';
             
             ax.YLimMode = 'auto';
             ax.YAxis.Label.String = 'Vertical Deflection / N';
             ax.YAxis.FontSize = 30;
             ax.YAxis.Label.FontSize = 30;
             ax.YAxis.LineWidth = 0.5;
+            ax.YAxis.Label.Interpreter = 'latex';
+            
+            ax.TickLabelInterpreter = 'latex';
             
             % plot data
             if ~isempty(orig_line) 
