@@ -793,10 +793,107 @@ classdef Callbacks
 
         end % DoFit
         
+<<<<<<< HEAD
+=======
+        function SaveFigure(~, ~)
+            Data = evalin('base', 'Data');
+            try
+                orig_line = Data.orig_line;
+            catch
+                orig_line = [];
+            end
+            try
+                fit_line = Data.fit_line;
+            catch
+                fit_line = [];
+            end
+            try
+                Xl = Data.FR_left_border;
+            catch
+                Xl = [];
+            end
+            try
+                Xr = Data.FR_right_border;
+            catch
+                Xr = [];
+            end
+            try
+                bl_range = Data.A_bl_range;
+            catch
+                bl_range = [];
+            end
+            
+            % create figure elements
+            fig = figure('NumberTitle', 'off', 'Name', 'Save Figure', 'Color', 'white');
+            ax = axes(fig);
+            grid on;
+            grid minor;
+            plottools;
+            
+            % sizes of axes elements
+            ax.XLimMode = 'auto';
+            ax.XAxis.Label.String = 'Vertical Tip Position / m';
+            ax.XAxis.FontSize = 30;
+            ax.XAxis.Label.FontSize = 30;
+            ax.XAxis.LineWidth = 0.5;
             ax.XAxis.Label.Interpreter = 'latex';
+            
+            ax.YLimMode = 'auto';
+            ax.YAxis.Label.String = 'Vertical Deflection / N';
+            ax.YAxis.FontSize = 30;
+            ax.YAxis.Label.FontSize = 30;
+            ax.YAxis.LineWidth = 0.5;
             ax.YAxis.Label.Interpreter = 'latex';
             
             ax.TickLabelInterpreter = 'latex';
+            
+            % plot data
+            if ~isempty(orig_line) 
+                hold(ax, 'on');
+                scatter(ax, orig_line(:,1), orig_line(:,2), 'b.',...
+                    'Marker', '.',...
+                    'MarkerEdgeColor', 'blue',...
+                    'MarkerFaceColor', 'blue',...
+                    'SizeData', 50);
+                hold(ax, 'off');
+            end
+            
+            % plot fitted data
+            if ~isempty(fit_line)
+                hold(ax, 'on');
+                plot(ax, fit_line(:,1), fit_line(:,2), 'r-',...
+                    'LineWidth', 2);
+                hold(ax, 'off');
+            end
+            
+            % tight layout
+            outerpos = ax.OuterPosition;
+            ti = ax.TightInset; 
+            left = outerpos(1) + ti(1);
+            bottom = outerpos(2) + ti(2);
+            ax_width = outerpos(3) - ti(1) - ti(3);
+            ax_height = outerpos(4) - ti(2) - ti(4);
+            ax.Position = [left bottom ax_width ax_height];
+            
+            % mark data offsets and fit range
+            if ~isempty(orig_line) && ~isempty(bl_range) && ...
+                    ~isempty(Xl) && ~isempty(Xr)
+                ax.XLimMode = 'auto';
+                ax.YLimMode = 'auto';
+                hold(ax, 'on');
+                xoffset = vline(mean(bl_range(:,1)), 'k--');
+                yoffset = hline(mean(bl_range(:,2)), 'k--');
+                UtilityFunctions.plotFitRange(ax, orig_line, Xl, Xr);
+                delete(xoffset);
+                xoffset2 = vline(mean(bl_range(:,1)), 'k--');
+                xoffset2.LineWidth = 2;
+                yoffset.LineWidth = 2;
+                hold(ax, 'off');
+            end
+            
+        end % SaveFigure
+        
+>>>>>>> Hotfix_SaveFigureAppearance
         function UpdateVaryParameterCallback(~, evt)
             % CellEditCallback für die tabelle der variablen parameter des
             % modells
