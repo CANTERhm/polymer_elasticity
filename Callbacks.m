@@ -136,6 +136,53 @@ classdef Callbacks
             assignin('base', 'Data', Data);
         end % reimport_data_btn_callback
         
+        function calculate_costfunction_btn_callback(~,~)
+            % CALCULATE_COSTFUNCTION_BTN_CALLBACK calculates the
+            % Costfunction of the fit and polts it as a surface-plot
+            
+            % input
+            Data = evalin('base', 'Data');
+            Gui_Elements = evalin('base', 'Gui_Elements');
+            DataSelection = evalin('base', 'DataSelection');
+            
+            % procedure
+            cwave = [Data.parameter.variable_parameter.cf_Ks;...
+                Data.parameter.variable_parameter.cf_Lc;...
+                Data.parameter.variable_parameter.cf_lk;...
+                Data.parameter.constant_parameter.kb;...
+                Data.parameter.constant_parameter.T];
+            range = Data.cf_parameter_range;
+            kraft = -DataSelection(:,2);
+            weg = DataSelection(:,1);
+            
+            plotNumber = Data.cf_plotnumber;
+            fitNum = Data.cf_fitnum;
+            Name1 = ['Costfunction' num2str(plotNumber)];
+            Tag_figure1 = ['costfunction' num2str(plotNumber)];
+            
+            % surface plot overview
+            [J, surfx, surfy] = UtilityFunctions.DoCalculation(cwave, weg, kraft, fitNum, range);
+            [surf_object, surf_figure] = UtilityFunctions.DoSurf(surfx, surfy, J, Name1, Tag_figure1, []);
+            surf_figure.DeleteFcn = @Callbacks.DeleteCostFunctionFigure;
+            
+            % create a data brush-object for cost function
+            ax = surf_object.Parent;
+            fig = ax.Parent;
+            h = brush(fig);
+            h.Enable = 'off';
+            h.ActionPostCallback = @Callbacks.CostFunctionROIProcessingCallback;
+            
+            % output
+            Data.cf_surf_object.(Tag_figure1) = surf_object;
+            Data.cf_surf_data.(Tag_figure1).X = surfx;
+            Data.cf_surf_data.(Tag_figure1).Y = surfy;
+            Data.cf_surf_data.(Tag_figure1).Z = J;
+            Gui_Elements.cf_data_brush.(Tag_figure1) = h;
+            assignin('base', 'Data', Data);
+            assignin('base', 'Gui_Elements', Gui_Elements);
+            
+        end % calculate_costfunction_btn_callback
+        
     end
     
     methods(Static) % Resize Callbacks
@@ -223,10 +270,248 @@ classdef Callbacks
             cd(current_directory);
             
         end % LoadForceCurves
+        
         function OpenHelpCallback(~, ~)
             web('Help\polymer_elasticity.html',...
                 '-browser');
         end % OpenHelpCallback
+        
+    end
+    
+    methods(Static) % Context Menu Callbacks
+        
+        function SaveFigure(~, ~)
+            Data = evalin('base', 'Data');
+            try
+                orig_line = Data.orig_line;
+            catch
+                orig_line = [];
+            end
+            try
+                fit_line = Data.fit_line;
+            catch
+                fit_line = [];
+            end
+            try
+                Xl = Data.FR_left_border;
+            catch
+                Xl = [];
+            end
+            try
+                Xr = Data.FR_right_border;
+            catch
+                Xr = [];
+            end
+            try
+                bl_range = Data.A_bl_range;
+            catch
+                bl_range = [];
+            end
+            
+            % create figure elements
+            fig = figure('NumberTitle', 'off', 'Name', 'Save Figure', 'Color', 'white');
+            ax = axes(fig);
+            grid on;
+            grid minor;
+            plottools;
+            
+            % sizes of axes elements
+            ax.XLimMode = 'auto';
+            ax.XAxis.Label.String = 'Vertical Tip Position / m';
+            ax.XAxis.FontSize = 30;
+            ax.XAxis.Label.FontSize = 30;
+            ax.XAxis.LineWidth = 0.5;
+            
+            ax.YLimMode = 'auto';
+            ax.YAxis.Label.String = 'Vertical Deflection / N';
+            ax.YAxis.FontSize = 30;
+            ax.YAxis.Label.FontSize = 30;
+            ax.YAxis.LineWidth = 0.5;
+            
+            % plot data
+            if ~isempty(orig_line) 
+                hold(ax, 'on');
+                scatter(ax, orig_line(:,1), orig_line(:,2), 'b.',...
+                    'Marker', '.',...
+                    'MarkerEdgeColor', 'blue',...
+                    'MarkerFaceColor', 'blue',...
+                    'SizeData', 50);
+                hold(ax, 'off');
+            end
+            
+            % plot fitted data
+            if ~isempty(fit_line)
+                hold(ax, 'on');
+                plot(ax, fit_line(:,1), fit_line(:,2), 'r-',...
+                    'LineWidth', 2);
+                hold(ax, 'off');
+            end
+            
+            % tight layout
+            outerpos = ax.OuterPosition;
+            ti = ax.TightInset; 
+            left = outerpos(1) + ti(1);
+            bottom = outerpos(2) + ti(2);
+            ax_width = outerpos(3) - ti(1) - ti(3);
+            ax_height = outerpos(4) - ti(2) - ti(4);
+            ax.Position = [left bottom ax_width ax_height];
+            
+            % mark data offsets and fit range
+            if ~isempty(orig_line) && ~isempty(bl_range) && ...
+                    ~isempty(Xl) && ~isempty(Xr)
+                ax.XLimMode = 'auto';
+                ax.YLimMode = 'auto';
+                hold(ax, 'on');
+                xoffset = vline(mean(bl_range(:,1)), 'k--');
+                yoffset = hline(mean(bl_range(:,2)), 'k--');
+                UtilityFunctions.plotFitRange(ax, orig_line, Xl, Xr);
+                delete(xoffset);
+                xoffset2 = vline(mean(bl_range(:,1)), 'k--');
+                xoffset2.LineWidth = 2;
+                yoffset.LineWidth = 2;
+                hold(ax, 'off');
+            end
+            
+        end % SaveFigure
+        
+        function SaveCostFunctionFigure(~, ~)
+            % SAVECOSTFUNCTIONFIGURE creates an new figure of one of the
+            % costfunction plots in a printable form
+            
+            costfunction = gcf();
+            
+            % save and load fig, to get a deep copy of it
+            savefig(costfunction, 'temp/costfunction.fig');
+            costfunction = openfig('temp/costfunction.fig');
+            delete temp/*.fig
+            
+            costfunction.Name = 'Save Figure';
+            
+            % change interpreter and font size of axes elements
+            ax = findobj(costfunction, 'type', 'axes');
+            ax.TickLabelInterpreter = 'latex';
+            ax.XLimMode = 'auto';
+            old_label = ax.XAxis.Label.String;
+            new_label = ['$' old_label '$'];
+            ax.XAxis.Label.String = new_label;
+            ax.XAxis.FontSize = 30;
+            ax.XAxis.Label.FontSize = 30;
+            ax.XAxis.LineWidth = 0.5;
+            ax.XAxis.Label.Interpreter = 'latex';
+            
+            ax.YLimMode = 'auto';
+            old_label = ax.YAxis.Label.String;
+            new_label = ['$' old_label '$'];
+            ax.YAxis.Label.String = new_label;
+            ax.YAxis.FontSize = 30;
+            ax.YAxis.Label.FontSize = 30;
+            ax.YAxis.LineWidth = 0.5;
+            ax.YAxis.Label.Interpreter = 'latex';
+            
+            % change the interpreter- and FontSize-properties the coordinate
+            % location annotation, if it exists
+            coords = findobj(ax, 'type', 'text');
+            coords_scatter = findobj(ax, 'type', 'scatter');
+            if ~isempty(coords) && ~isempty(coords_scatter)
+                coords.String = sprintf('$%s: %d$ \n$%s: %d$ \n$%s: %d$',...
+                    'X', coords_scatter.XData,...
+                    'Y', coords_scatter.YData,...
+                    'Z', coords_scatter.ZData);
+                coords.Interpreter = 'latex';
+            end
+            
+            % change the colobar-properties, if it exists
+            cb = findobj(costfunction, 'type', 'colorbar');
+            if ~isempty(cb)
+                cb.FontSize = 30;
+                cb.TickLabelInterpreter = 'latex';
+            end
+
+        end % SaveCostFunctionFigure
+        
+        function PlotMinimumCoordinates(~, ~)
+            % PLOTMINIMUMCOORDINATES plots an marker at the coordinates of
+            % the minimum into the actual surface plot
+            
+            % input
+            Data = evalin('base', 'Data');
+            plotnumber = Data.cf_plotnumber;
+            Tag_scatter = ['global_minimum' plotnumber];
+            fig = gcf();
+            surf_object = findobj(fig, 'Type', 'surface');
+            Tag_surface = surf_object.Tag;
+            
+            if ~isempty(surf_object)
+                data.X = surf_object.XData;
+                data.Y = surf_object.YData;
+                data.Z = surf_object.ZData;
+
+                % procedure
+                if ~isfield(Data.cf_surf_data.(Tag_surface), 'minimum_coordinates_handle')
+                    [GlobMin, GlobMin_handle] = UtilityFunctions.plotGlobMin(data,...
+                        Tag_scatter);
+                    GlobMin_handle.DeleteFcn = @Callbacks.DeleteMinimumCoordinates;
+                else
+                    assignin('base', 'Data', Data);
+                    return
+                end
+            else
+                assignin('base', 'Data', Data);
+                return
+            end
+            
+            %output
+            Data.cf_surf_data.(Tag_surface).minimum_coordinates_handle = GlobMin_handle;
+            Data.cf_surf_data.(Tag_surface).minimum_coordinates = GlobMin;
+            assignin('base', 'Data', Data);
+            
+        end % PlotMinimumCoordinates
+        
+        function CostFunctionShowMinimumCoordinates(~, ~)
+            % COSTFUNCTIONSHOWMINIMUMCOORDINATES plot the Coordinates of
+            % the minimum of the costfunction in an textbox
+            % next to the marker location
+            
+            % input from workspace
+            Data = evalin('base', 'Data');
+            
+            fig = gcf();
+            surf = findobj(fig, 'type', 'surface');
+            
+            if ~isempty(surf)
+                tag = surf.Tag;
+                if isfield(Data.cf_surf_data, tag)
+                    if isfield(Data.cf_surf_data.(tag), 'minimum_coordinates')
+                        coords = Data.cf_surf_data.costfunction1.minimum_coordinates;
+                        t_x = coords(1);
+                        t_y = coords(2);
+                        t_z = coords(3);
+                        label = sprintf('%s: \t %d \n%s: \t %d \n%s: \t %d',...
+                            'X', t_x,...
+                            'Y', t_y,...
+                            'Z', t_z);
+                        t = text(t_x, t_y, label);
+                        t.Tag = tag;
+                        t.EdgeColor = 'black';
+                        t.BackgroundColor = 'yellow';
+                        t.DeleteFcn = @Callbacks.DeleteMinimumCoordinatesAnnotation;
+                        
+                        % place the annotation to a nice position
+                        pos = t.Extent;
+                        new_x = t_x + pos(3)/4;
+                        new_y = t_y + pos(4);
+                        t.Position = [new_x new_y];
+                        
+                        % assign to Data-struct
+                        Data.cf_surf_data.(tag).minimum_coordinates_annotation = t;
+                    end
+                end
+            end
+            
+            % output to workspace
+            assignin('base', 'Data', Data);
+            
+        end % CostFunctionShowMinimumCoordinates
         
     end
     
@@ -508,100 +793,6 @@ classdef Callbacks
 
         end % DoFit
         
-        function SaveFigure(~, ~)
-            Data = evalin('base', 'Data');
-            try
-                orig_line = Data.orig_line;
-            catch
-                orig_line = [];
-            end
-            try
-                fit_line = Data.fit_line;
-            catch
-                fit_line = [];
-            end
-            try
-                Xl = Data.FR_left_border;
-            catch
-                Xl = [];
-            end
-            try
-                Xr = Data.FR_right_border;
-            catch
-                Xr = [];
-            end
-            try
-                bl_range = Data.A_bl_range;
-            catch
-                bl_range = [];
-            end
-            
-            % create figure elements
-            fig = figure('NumberTitle', 'off', 'Name', 'Save Figure', 'Color', 'white');
-            ax = axes(fig);
-            grid on;
-            grid minor;
-            plottools;
-            
-            % sizes of axes elements
-            ax.XLimMode = 'auto';
-            ax.XAxis.Label.String = 'Vertical Tip Position / m';
-            ax.XAxis.FontSize = 30;
-            ax.XAxis.Label.FontSize = 30;
-            ax.XAxis.LineWidth = 0.5;
-            
-            ax.YLimMode = 'auto';
-            ax.YAxis.Label.String = 'Vertical Deflection / N';
-            ax.YAxis.FontSize = 30;
-            ax.YAxis.Label.FontSize = 30;
-            ax.YAxis.LineWidth = 0.5;
-            
-            % plot data
-            if ~isempty(orig_line) 
-                hold(ax, 'on');
-                scatter(ax, orig_line(:,1), orig_line(:,2), 'b.',...
-                    'Marker', '.',...
-                    'MarkerEdgeColor', 'blue',...
-                    'MarkerFaceColor', 'blue',...
-                    'SizeData', 50);
-                hold(ax, 'off');
-            end
-            
-            % plot fitted data
-            if ~isempty(fit_line)
-                hold(ax, 'on');
-                plot(ax, fit_line(:,1), fit_line(:,2), 'r-',...
-                    'LineWidth', 2);
-                hold(ax, 'off');
-            end
-            
-            % tight layout
-            outerpos = ax.OuterPosition;
-            ti = ax.TightInset; 
-            left = outerpos(1) + ti(1);
-            bottom = outerpos(2) + ti(2);
-            ax_width = outerpos(3) - ti(1) - ti(3);
-            ax_height = outerpos(4) - ti(2) - ti(4);
-            ax.Position = [left bottom ax_width ax_height];
-            
-            % mark data offsets and fit range
-            if ~isempty(orig_line) && ~isempty(bl_range) && ...
-                    ~isempty(Xl) && ~isempty(Xr)
-                ax.XLimMode = 'auto';
-                ax.YLimMode = 'auto';
-                hold(ax, 'on');
-                xoffset = vline(mean(bl_range(:,1)), 'k--');
-                yoffset = hline(mean(bl_range(:,2)), 'k--');
-                UtilityFunctions.plotFitRange(ax, orig_line, Xl, Xr);
-                delete(xoffset);
-                xoffset2 = vline(mean(bl_range(:,1)), 'k--');
-                xoffset2.LineWidth = 2;
-                yoffset.LineWidth = 2;
-                hold(ax, 'off');
-            end
-            
-        end % SaveFigure
-        
         function UpdateVaryParameterCallback(~, evt)
             % CellEditCallback für die tabelle der variablen parameter des
             % modells
@@ -755,6 +946,285 @@ classdef Callbacks
                 delete(src);
             end
         end % CloseRequestCallback
+        
+        function EditPlotNumberCallback(src, ~)
+            % EDITPLOTNUMBERCALLBACK This callback evaluates the input for
+            % the cf_plotnumber_edit-object. 
+            %
+            %   If the userinput is not convertable to a double-type
+            %   Variable, the userinput gets declined.
+            
+            % input
+            Data = evalin('base', 'Data');
+            
+            % new value assignment
+            old_value = num2str(Data.cf_plotnumber);
+            new_value = str2double(src.String);
+            if ~isnan(new_value)
+                Data.cf_plotnumber = new_value;
+            else
+                src.String = old_value;
+            end
+            
+            % output
+            assignin('base', 'Data', Data);
+        end % EditPlotNumberCallback
+        
+        function EditFitNumCallback(src, ~)
+            % EIDTFITNUMCALLBACK writes valid parameter-values for
+            % cf_fitnum-property to Data
+            
+            % input
+            Data = evalin('base', 'Data');
+            
+            % new value assignment
+            old_value = num2str(Data.cf_fitnum);
+            new_value = str2double(src.String);
+            if ~isnan(new_value)
+                Data.cf_fitnum = new_value;
+            else
+                src.String = old_value;
+            end
+            
+            % output
+            assignin('base', 'Data', Data);
+            
+        end % EditFitNumCallback
+        
+        function CostFunctionHoldParameterCallback(src, evt)
+            % COSTFUNCTIONHOLDPARAMETERCALLBACK Ensures, that only one
+            % Checkbox for the Hold-Column in the Cost Function Parameter
+            % Table can be checked. It also writes valid parmeter values to
+            % the cf_Ks, cf_Lc and cf_lk properties of
+            % Data.parameter.variable_parameter
+            
+            %input
+            Data = evalin('base', 'Data');
+            
+            % procedure
+            row = evt.Indices(1);
+            col = evt.Indices(2);
+            new_hold_data = false(3,1);
+            choice = {'cf_Ks'; 'cf_Lc'; 'cf_lk'};
+            
+            % ensure that for all times only one hold-checkbox can be checked.
+            % any other checkbox must be unchecked.
+            switch col
+                case 4 % hold-column
+                    if (evt.EditData)
+                        new_hold_data(row, 1) = true;
+                        src.Data(:,4) = num2cell(new_hold_data);
+                        hold_par = choice(new_hold_data);
+                        var_par = choice(~new_hold_data);
+                        var1 = var_par(1);
+                        var2 = var_par(2);
+                        Data.parameter.hold_parameter.(hold_par{1}) = true;
+                        Data.parameter.hold_parameter.(var1{1}) = false;
+                        Data.parameter.hold_parameter.(var2{1}) = false;
+                    else
+                        new_hold_data(row, 1) = evt.PreviousData;
+                        src.Data(:,4) = num2cell(new_hold_data);
+                    end
+                case 2 % value-column
+                    if isempty(evt.Error)
+                        switch row
+                            case 1 % cf_Ks
+                                value = str2double(evt.EditData);
+                                Data.parameter.variable_parameter.cf_Ks = value; 
+                            case 2 % cf_Lc
+                                value = str2double(evt.EditData);
+                                Data.parameter.variable_parameter.cf_Lc = value; 
+                            case 3 % cf_lk
+                                value = str2double(evt.EditData);
+                                Data.parameter.variable_parameter.cf_lk = value;
+                        end
+                    end
+            end
+            
+            % output
+            assignin('base', 'Data', Data);
+            
+        end % CostFunctionHOldParameterCallback
+        
+        function CostFunctionRangeEditCallback(~, evt)
+            % COSTFUNCTIONRANGEEDITCALLBACK Writes valid range-values for
+            % the Cost Function into the Data.cf_range-property 
+            
+            % input
+            Data = evalin('base', 'Data');
+            
+            % procedure
+            row = evt.Indices(1);
+            col = evt.Indices(2);
+            
+            if isempty(evt.Error)
+                value = str2double(evt.EditData);
+                Data.cf_parameter_range(row, col-1) = value;
+            end
+            
+            % output
+            assignin('base', 'Data', Data);
+            
+        end % CostFunctionRangeEditCallback
+        
+        function CostFunctionROIProcessingCallback(src, ~)
+            % COSTFUNCTIONROIPROCESSINGCALLBACK processing the
+            % ActionsPostCallback of the data brush linked to the surface
+            % plot of the cost function
+            
+            % input
+            Data = evalin('base', 'Data');
+            DS = evalin('base', 'DataSelection');
+            
+            % procedure
+            plotNumber = Data.cf_plotnumber;
+            fitNum = Data.cf_fitnum;
+            cwave = [Data.parameter.variable_parameter.cf_Ks;...
+                Data.parameter.variable_parameter.cf_Lc;...
+                Data.parameter.variable_parameter.cf_lk;...
+                Data.parameter.constant_parameter.kb;...
+                Data.parameter.constant_parameter.T];
+            kraft = -DS(:,2);
+            weg = DS(:,1);
+            Name1 = ['Costfunction' num2str(plotNumber) '_zoomed'];
+            Tag_figure1 = ['costfunction' num2str(plotNumber) '_zoomed'];
+            ax = src.Children;
+            surf = findobj(ax, 'type', 'surface');
+            
+            try
+                brushed = surf.BrushData;
+            catch ME % if you can
+                switch ME.identifier
+                    case 'MATLAB:class:InvalidHandle'
+                        % orig_line_object has been deleted
+                        return
+                end
+            end
+            
+            % process the region of interest
+            mask = logical(brushed);
+            [X,Y] = meshgrid(surf.XData,surf.YData);
+            roi_x = CropMatrix(X, mask);
+            roi_y = CropMatrix(Y, mask);
+            roi_z = CropMatrix(surf.ZData, mask);
+            roi = cat(1,roi_x,roi_y,roi_z);
+            roi = UtilityFunctions.updateSurf(roi, cwave, weg, kraft, fitNum);
+            
+            % calculate new z-data-ranges for the surface plot, in order to
+            % adjust the colorbar
+            CData = roi.Z;
+            maxZ = max(max(roi.Z)) - 0.1*max(max(roi.Z));
+            mask = (roi.Z >= maxZ);
+            CData(mask) = maxZ;
+            
+            % recalculate surface plot
+            [surf_object_zoomed, surf_figure_zoomed] = UtilityFunctions.DoSurf(roi.X, roi.Y, roi.Z, Name1, Tag_figure1, CData);
+            surf_figure_zoomed.DeleteFcn = @Callbacks.DeleteCostFunctionFigure;
+            
+            % create a context menu for the cost function refinement
+            if isempty(surf_object_zoomed.UIContextMenu)
+                cm = uicontextmenu;
+                surf_object_zoomed.UIContextMenu = cm;
+                uimenu(cm, 'Label', 'Plot Minimum Coordinates', 'Callback', @Callbacks.PlotMinimumCoordinates);
+            end
+            
+            % create a data brush-object for cost function
+            h = brush(surf_figure_zoomed);
+            h.Enable = 'off';
+            h.ActionPostCallback = @Callbacks.CostFunctionROIProcessingCallback;
+            
+            % output
+            Data.cf_surf_object.(Tag_figure1) = surf_object_zoomed;
+            Data.cf_surf_data.(Tag_figure1).X = roi.X';
+            Data.cf_surf_data.(Tag_figure1).Y = roi.Y';
+            Data.cf_surf_data.(Tag_figure1).Z = roi.Z;
+            assignin('base', 'Data', Data);
+            
+        end % CostFunctionRefinementCallback
+        
+        function DeleteMinimumCoordinates(src, ~)
+            % DELETESMINIMUMCOORDINATES delets the minimum coordinates from
+            % the Data-struct in the workspace, if they were deleted from
+            % the axes
+            
+            % input
+            Data = evalin('base', 'Data');
+            
+            % procedure
+            ax = src.Parent;
+            fig = ax.Parent;
+            surf = findobj(fig, 'Type', 'surface');
+            fields = {'minimum_coordinates',...
+                'minimum_coordinates_handle'};
+            
+            try
+                delete(Data.cf_surf_data.(surf.Tag).minimum_coordinates_handle)
+            catch
+            end
+            try
+                Data.cf_surf_data.(surf.Tag) = rmfield(Data.cf_surf_data.(surf.Tag), fields);
+            catch
+            end
+            
+            % try also to delete the coordinate annotation and remove it
+            % form the data-sturct, if it exists
+            try
+                delete(Data.cf_surf_data.(surf.Tag).minimum_coordinates_annotation);
+            catch
+            end
+            try
+                Data.cf_surf_data.(surf.Tag) = rmfield(Data.cf_surf_data.(surf.Tag),...
+                    'minimum_coordinates_annotation');
+            catch
+            end
+            
+            % output
+            assignin('base', 'Data', Data);
+            
+        end % DeleteMinimumCoordinates
+        
+        function DeleteMinimumCoordinatesAnnotation(src, ~)
+            % DELETEMINIMUMCOORDIANTESANNOTATION if the minimum coordinates
+            % annotation had been deleted, the handle has to be deleted
+            % from the Data.cf_surf_data.(obj_tag) structure
+            
+            % input from workspace
+            Data = evalin('base', 'Data');
+            
+            try
+                Data.cf_surf_data.(src.Tag) = rmfield(Data.cf_surf_data.(src.Tag), 'minimum_coordinates_annotation');
+            catch
+            end
+            
+            % output to workspace
+            assignin('base', 'Data', Data);
+            
+        end % DeleteMinimumCoordinatesAnnotation
+        
+        function DeleteCostFunctionFigure(src, ~)
+            % DELETECOSTFUNCTIONFIGURE Callback for the correct deletion
+            % of the cost function properties out of the data-object if the
+            % cost function figure has been closed
+
+            % input
+            Data = evalin('base', 'Data');
+            
+            % procedure
+            ax = src.Children;
+            surf = findobj(ax, 'Type', 'surface');
+            try
+                Data.cf_surf_data = rmfield(Data.cf_surf_data, surf.Tag);
+            catch
+            end
+            try
+                Data.cf_surf_object = rmfield(Data.cf_surf_object, surf.Tag);
+            catch
+            end
+            
+            % output
+            assignin('base', 'Data', Data);
+            
+        end % DeleteCostFunctionFigure
         
     end
     

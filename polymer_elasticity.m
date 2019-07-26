@@ -22,7 +22,7 @@
 % You should have received a copy of the GNU General Public License
 % along with polymer_elasticity.  If not, see <http://www.gnu.org/licenses/>.
 
-%% erstelle parameter
+%% create parameter
 vary_parameter = Results();
 constant_parameter = Results();
 hold_parameter = Results();
@@ -33,6 +33,12 @@ vary_parameter.addproperty('lk');
 vary_parameter.Ks = 28;
 vary_parameter.Lc = 0.5e-6;
 vary_parameter.lk = 5.4e-10;
+vary_parameter.addproperty('cf_Ks');
+vary_parameter.addproperty('cf_Lc');
+vary_parameter.addproperty('cf_lk');
+vary_parameter.cf_Ks = 28;
+vary_parameter.cf_Lc = 0.5e-6;
+vary_parameter.cf_lk = 5.4e-10;
 
 constant_parameter.addproperty('T');
 constant_parameter.addproperty('kb');
@@ -43,8 +49,15 @@ hold_parameter.addproperty('Ks');
 hold_parameter.addproperty('Lc');
 hold_parameter.addproperty('lk');
 hold_parameter.Ks = true;
-hold_parameter.Lc = true;
+hold_parameter.Lc = false;
 hold_parameter.lk = false;
+hold_parameter.addproperty('cf_Ks');
+hold_parameter.addproperty('cf_Lc');
+hold_parameter.addproperty('cf_lk');
+hold_parameter.cf_Ks = false;
+hold_parameter.cf_Lc = true;
+hold_parameter.cf_lk = false;
+
 
 %% read data
 
@@ -120,9 +133,9 @@ new_fitrange_btn = uicontrol(btn_box, 'Style', 'pushbutton',...
     'Callback', @Callbacks.new_fitrange_btn_callback);
 
 %% gui settings
-base.Heights = [-3.5 -1];
+base.Heights = [-3 -1];
 base.Padding = 5;
-control_box.Heights = [20 -1 -1];
+control_box.Heights = [30 -1 -1];
 control_box.Spacing = 10;
 axes_box.Padding = 0;
 axes_box.Spacing = 0;
@@ -168,11 +181,12 @@ slide_btn = uicontrol('Parent', slide_panel_container, 'Style', 'togglebutton',.
 dialog_container = uix.VBox('Parent', slide_panel);
 vary_parameter_panel = uix.BoxPanel('Parent', dialog_container,...
     'Title', 'Variable Parameters');
-button_container = uix.HButtonBox('Parent', dialog_container);
+% button_container = uix.HButtonBox('Parent', dialog_container);
 vary_parameter_container = uix.VBox('Parent', vary_parameter_panel);
 constant_parameter_panel = uix.BoxPanel('Parent', dialog_container,...
     'Title', 'Constant Parameters');
 constant_parameter_container = uix.VBox('Parent', constant_parameter_panel);
+button_container = uix.HButtonBox('Parent', dialog_container);
 
 % content of vary_parameter_container
 
@@ -202,12 +216,81 @@ constant_parameter_table.CellEditCallback = @Callbacks.UpdateConstantParameterCa
 % configure the DoFit button
 button_container.HorizontalAlignment = 'right';
 button_container.VerticalAlignment = 'middle';
+button_container.ButtonSize = [150, 20];
 do_fit_btn = uicontrol('Parent', button_container, 'Style', 'pushbutton',...
     'String', 'Do Fit',...
     'Callback', @Callbacks.DoFit);
 
 % configure the dialog_container
-dialog_container.Heights = [-1 20 -1];
+dialog_container.Heights = [-1 -1 25];
+
+%% slide-panel: cost function tab
+cf_container = uix.VBox('Parent', slide_panel);
+cf_panel = uix.BoxPanel('Parent', cf_container, 'Title', 'Cost Function Parameter');
+cf_range_panel = uix.BoxPanel('Parent', cf_container, 'Title', 'Cost Function Parameter Ranges');
+cf_parameter_container = uix.VBox('Parent',cf_panel);
+cf_parameter_range_container = uix.VBox('Parent', cf_range_panel);
+cf_edit_field_container = uix.HButtonBox('Parent', cf_container);
+cf_fitnum_edit_field_container = uix.HButtonBox('Parent', cf_container);
+cf_button_container = uix.HButtonBox('Parent', cf_container);
+
+% content of cost function parameter table
+
+cost_function_data = {'Ks', vary_parameter.cf_Ks, 'N/m', hold_parameter.cf_Ks;...
+    'Lc', vary_parameter.cf_Lc, 'm', hold_parameter.cf_Lc;...
+    'lk', vary_parameter.cf_lk, 'm', hold_parameter.cf_lk};
+
+cf_parameter_table = uitable(cf_parameter_container);
+cf_parameter_table.RowName = {};
+cf_parameter_table.ColumnName = {'Parameter', 'Value', 'Unit', 'hold?'};
+cf_parameter_table.Data = cost_function_data;
+cf_parameter_table.ColumnEditable = [false true false true];
+cf_parameter_table.CellEditCallback = @Callbacks.CostFunctionHoldParameterCallback;
+
+% content of cost function parameter range table
+cost_function_range_data = {'Ks', 0, 2;...
+    'Lc', 0, 2;...
+    'lk', 0, 2};
+
+cf_parameter_range_table = uitable(cf_parameter_range_container);
+cf_parameter_range_table.RowName = {};
+cf_parameter_range_table.ColumnName = {'Parameter', 'Lower Bound [a.u.]', 'Upper Bound [a.u.]'};
+cf_parameter_range_table.Data = cost_function_range_data;
+cf_parameter_range_table.ColumnEditable = [false true true];
+cf_parameter_range_table.CellEditCallback = @Callbacks.CostFunctionRangeEditCallback;
+
+% plot number edit field
+cf_edit_field_container.HorizontalAlignment = 'right';
+cf_edit_field_container.VerticalAlignment = 'middle';
+cf_edit_field_container.ButtonSize = [150 20];
+
+cf_plotnumber_text = uicontrol('Parent', cf_edit_field_container, 'Style', 'text',...
+    'String', 'Plot Number:');
+cf_plotnumber_edit = uicontrol('Parent', cf_edit_field_container, 'Style', 'edit',...
+    'String', '1',...
+    'Callback', @Callbacks.EditPlotNumberCallback);
+
+% fit number edit field
+cf_fitnum_edit_field_container.HorizontalAlignment = 'right';
+cf_fitnum_edit_field_container.VerticalAlignment = 'middle';
+cf_fitnum_edit_field_container.ButtonSize = [150 20];
+
+cf_fitnum_text = uicontrol('Parent', cf_fitnum_edit_field_container, 'Style', 'text',...
+    'String', ' Resolution/Axis:');
+cf_fitnum_edit = uicontrol('Parent', cf_fitnum_edit_field_container, 'Style', 'edit',...
+    'String', '100',...
+    'Callback', @Callbacks.EditFitNumCallback);
+
+% configuration of calculata cost function button
+cf_button_container.HorizontalAlignment = 'right';
+cf_button_container.VerticalAlignment = 'middle';
+cf_button_container.ButtonSize = [150 20];
+calc_cost_func_btn = uicontrol('Parent', cf_button_container, 'Style', 'pushbutton',...
+    'String', 'Calculate Cost Function',...
+    'Callback', @Callbacks.calculate_costfunction_btn_callback);
+
+% configuration of cf_container
+cf_container.Heights = [-1 -1 25 25 25];
 
 %% settings of slide-panel
 extended_width = 400;
@@ -215,7 +298,7 @@ shrinked_width = 20;
 
 axes_box.Widths(1) = shrinked_width;
 slide_panel_container.Widths = [-1 20];
-slide_panel.TabTitles = {'Modellparameter'};
+slide_panel.TabTitles = {'Model', 'Cost Function'};
 slide_panel.TabWidth = 100;
 
 %% create main_axes 
@@ -272,8 +355,15 @@ Gui_Elements.slide_panel = slide_panel;
 Gui_Elements.slide_btn = slide_btn;
 Gui_Elements.slide_panel_vary_parameter_table = vary_parameter_table;
 Gui_Elements.slide_panel_constant_parameter_table = constant_parameter_table;
+Gui_Elements.slide_panel_do_fit_btn = do_fit_btn;
+Gui_Elements.slide_panel_cf_parameter_table = cf_parameter_table;
+Gui_Elements.slide_panel_cf_parameter_range_table = cf_parameter_range_table;
+Gui_Elements.slide_panel_cf_plotnumber_edit = cf_plotnumber_edit;
+Gui_Elements.slide_panel_cf_calc_cost_func_btn = calc_cost_func_btn;
 Gui_Elements.slide_panel_extended_width = extended_width;
 Gui_Elements.slide_panel_shrinked_width = shrinked_width;
+
+Gui_Elements.cf_data_brush = [];
 
 %% create Data 
 Data.A_bl_range = [];
@@ -287,8 +377,16 @@ Data.xoffset = [];
 Data.yoffset = [];
 Data.brushed_data = [];
 Data.borders_from_table = false;
+
 Data.FR_left_border = [];
 Data.FR_right_border = [];
+
+Data.cf_plotnumber = 1;
+Data.cf_parameter_range = [0 2; 0 2; 0 2];
+Data.cf_surf_object = [];
+Data.cf_surf_data = [];
+Data.cf_fitnum = 100;
+
 Data.parameter.variable_parameter = vary_parameter;
 Data.parameter.constant_parameter = constant_parameter;
 Data.parameter.hold_parameter = hold_parameter;
