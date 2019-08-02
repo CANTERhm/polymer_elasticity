@@ -120,7 +120,9 @@ axes_box = uix.HBox('Parent', base);
 control_box = uix.VBox('Parent', base);
 btn_box = uix.HBox('Parent', control_box, 'Spacing', 10);
 results_table = uitable(control_box);
+results_table.RearrangeableColumns = 'on';
 results_table_2 = uitable(control_box);
+results_table_2.RearrangeableColumns = 'on';
 
 reimport_data_btn = uicontrol('Parent', btn_box, 'Style', 'pushbutton',...
     'String', 'Reimport DataSelection',...
